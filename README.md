@@ -13,6 +13,7 @@ Prerequisites
 
 Quick setup
 -----------
+Within the folder zombie-ctf:
 
 1. Install dependencies:
 
