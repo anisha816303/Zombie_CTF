@@ -1,0 +1,130 @@
+.lab-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 100vw;
+  margin: 0;
+  padding: 0;
+  background: url("/lab-bg.png") center/cover no-repeat;
+  overflow: hidden;
+}
+
+
+/* Glitch effect overlay */
+.glitch-overlay {
+  position: absolute;
+  top: -5%;
+  left: -5%;
+  width: 110%;
+  height: 110%;
+  background:
+    repeating-linear-gradient(0deg,
+      rgba(0, 255, 0, 0.15),
+      rgba(0, 255, 0, 0.15) 2px,
+
+      transparent 2px,
+      transparent 5px),
+    repeating-linear-gradient(90deg,
+      rgba(255, 0, 0, 0.05),
+      rgba(255, 0, 0, 0.05) 1px,
+      transparent 1px,
+      transparent 3px);
+  animation: glitch 2s infinite alternate;
+  pointer-events: none;
+  mix-blend-mode: difference;
+  z-index: 10;
+}
+
+@keyframes glitch {
+  0% {
+    transform: translate(0);
+    opacity: 0.8;
+    filter: none;
+  }
+
+  5% {
+    transform: translate(-8px, 6px);
+    opacity: 1;
+    filter: contrast(120%);
+  }
+
+  10% {
+    transform: translate(8px, -6px);
+    opacity: 0.4;
+    filter: none;
+  }
+
+  15% {
+    transform: translate(-3px, 2px);
+    opacity: 0.8;
+  }
+
+  20% {
+    transform: translate(0);
+    opacity: 0.8;
+  }
+
+  45% {
+    transform: translate(0);
+    opacity: 0.8;
+  }
+
+  50% {
+    transform: translate(12px, -4px) scale(1.02);
+    opacity: 1;
+    filter: hue-rotate(45deg);
+  }
+
+  55% {
+    transform: translate(-12px, 4px) scale(1);
+    opacity: 0.3;
+  }
+
+  60% {
+    transform: translate(0);
+    opacity: 0.8;
+    filter: none;
+  }
+
+  100% {
+    transform: translate(0);
+    opacity: 0.8;
+  }
+}
+
+/* Hidden puzzle piece */
+.puzzle-piece {
+  position: absolute;
+  top: 60%;
+  left: 70%;
+  width: 80px;
+  height: 80px;
+  background: rgba(0, 255, 100, 0.2);
+  color: rgba(0, 255, 100, 0.7);
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+
+  /* make it subtle */
+  opacity: 0.2;
+  transition: all 0.3s ease;
+}
+
+.puzzle-piece:hover {
+  opacity: 0.8;
+  transform: scale(1.1);
+}
+
+/* Flag message */
+.flag-message {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  color: #00ff88;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 15px;
+  border-radius: 8px;
+}
