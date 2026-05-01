@@ -6,10 +6,37 @@
     width: 100vw;
     margin: 0;
     padding: 0;
-    background: url("/medbay-bg.png") center/cover no-repeat;
+    background: url("/medbay-bg.jpeg") center/cover no-repeat;
     overflow: hidden;
     color: #ff3333;
-    font-family: 'Courier New', Courier, monospace;
+    font-family: 'Share Tech Mono', monospace;
+}
+
+.location-header {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    display: flex;
+    justify-content: space-between;
+    z-index: 30;
+}
+
+.back-btn, .reset-puzzle-btn {
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid #ff3333;
+    color: #ff3333;
+    padding: 8px 16px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 0.9rem;
+}
+
+.back-btn:hover, .reset-puzzle-btn:hover {
+    background: #ff3333;
+    color: #000;
+    box-shadow: 0 0 15px #ff3333;
 }
 
 /* Inherits the puzzle-panel and other utility classes from index.css zombie mode or global CSS, but we can reuse SectorB CSS logic */
@@ -20,8 +47,9 @@
     transform: translate(-50%, -50%);
     background: rgba(20, 0, 0, 0.9);
     border: 1px solid #ff3333;
-    padding: 40px;
-    width: 500px;
+    padding: 20px;
+    width: 90%;
+    max-width: 500px;
     z-index: 20;
     box-shadow: 0 0 20px rgba(255, 0, 0, 0.2);
 }
@@ -85,22 +113,6 @@
     margin-top: 20px;
 }
 
-.medbay-container .back-btn {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    background: transparent;
-    border: none;
-    color: #ff3333;
-    font-family: inherit;
-    font-size: 1rem;
-    cursor: pointer;
-    z-index: 20;
-}
-
-.medbay-container .back-btn:hover {
-    color: #fff;
-}
 
 /* Different effects for Medbay */
 .medbay-container {
@@ -135,8 +147,8 @@
     /* Near the red alarm on the centrifuge machine */
     top: 43%;
     left: 43%;
-    width: 40px;
-    height: 40px;
+    width: 60px;
+    height: 60px;
     background: transparent;
     cursor: pointer;
     border-radius: 50%;

@@ -26,6 +26,14 @@ const MedBay = ({ onBack, user, setUser }) => {
         }
     };
 
+    const handleReset = () => {
+        setFlagInput("");
+        setMessage("");
+        setTerminalVisible(false);
+        setPopupText("");
+        setScanProgress(0);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setMessage("Checking...");
@@ -56,7 +64,10 @@ const MedBay = ({ onBack, user, setUser }) => {
         <div className="medbay-container">
             <div className="glitch-overlay"></div>
             
-            <button className="back-btn" onClick={onBack}>[ RETURN TO MAP ]</button>
+            <div className="location-header">
+                <button className="back-btn" onClick={onBack}>[ RETURN TO MAP ]</button>
+                <button className="reset-puzzle-btn" onClick={handleReset}>[ RESET PUZZLE ]</button>
+            </div>
 
             {!found && !terminalVisible && (
                 <>

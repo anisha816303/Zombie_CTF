@@ -1,9 +1,15 @@
 .admin-container {
-    padding: 40px;
+    padding: 20px;
     background: #050505;
     min-height: 100vh;
     color: #00ff50;
-    font-family: 'Courier New', Courier, monospace;
+    font-family: 'Share Tech Mono', monospace;
+}
+
+@media (max-width: 768px) {
+    .admin-container {
+        padding: 10px;
+    }
 }
 
 .admin-header {
@@ -19,6 +25,13 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 40px;
+}
+
+@media (max-width: 1024px) {
+    .admin-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
 }
 
 .players-list, .live-logs {

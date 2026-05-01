@@ -11,9 +11,9 @@
   --shadow:
     rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+  --sans: 'Share Tech Mono', monospace;
+  --heading: 'Share Tech Mono', monospace;
+  --mono: 'Share Tech Mono', monospace;
 
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;
@@ -27,6 +27,10 @@
 
   @media (max-width: 1024px) {
     font-size: 16px;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 14px;
   }
 }
 

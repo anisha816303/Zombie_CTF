@@ -6,10 +6,193 @@
   width: 100vw;
   margin: 0;
   padding: 0;
-  background: url("/lab-bg.png") center/cover no-repeat;
+  background: url("/lab-bg.jpeg") center/cover no-repeat;
   overflow: hidden;
+  font-family: 'Share Tech Mono', monospace;
 }
 
+.location-header {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    display: flex;
+    justify-content: space-between;
+    z-index: 30;
+}
+
+.back-btn, .reset-puzzle-btn {
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid #00ff50;
+    color: #00ff50;
+    padding: 8px 16px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 0.9rem;
+}
+
+.back-btn:hover, .reset-puzzle-btn:hover {
+    background: #00ff50;
+    color: #000;
+    box-shadow: 0 0 15px #00ff50;
+}
+
+/* Clue System */
+.clue-system {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 25;
+    width: 100%;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.clue-system.terminal-open {
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    top: auto;
+}
+
+/* Laptop adjustment: move to side to avoid center terminal */
+@media (min-width: 1024px) {
+    .clue-system.terminal-open {
+        left: 40px;
+        transform: none;
+        width: 320px;
+        bottom: 40px;
+    }
+    .clue-system.terminal-open .fragment-display {
+        text-align: left;
+    }
+}
+
+/* If screen is too short, move it to the top instead */
+@media (max-height: 800px) and (min-width: 1024px) {
+    .clue-system.terminal-open {
+        top: 100px;
+        bottom: auto;
+    }
+}
+
+.clue-btn {
+    background: rgba(0, 255, 80, 0.1);
+    border: 1px solid #00ff50;
+    color: #00ff50;
+    padding: 12px 24px;
+    font-family: inherit;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    letter-spacing: 1px;
+}
+
+.clue-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    border-color: #006620;
+    color: #006620;
+}
+
+.clue-btn:not(:disabled):hover {
+    background: #00ff50;
+    color: #000;
+    box-shadow: 0 0 20px #00ff50;
+}
+
+.fragment-display {
+    margin-top: 20px;
+    background: rgba(0, 10, 0, 0.9);
+    border: 1px solid #00ff50;
+    padding: 20px;
+    text-align: center;
+    width: 90%;
+    max-width: 400px;
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fragment-info p {
+    margin: 5px 0;
+    font-size: 1rem;
+}
+
+.highlight {
+    color: #fff;
+    font-weight: bold;
+    text-shadow: 0 0 10px #fff;
+    font-size: 1.2rem;
+}
+
+.shape-container {
+    width: 100px;
+    height: 100px;
+    margin: 20px auto;
+    border: 1px dashed rgba(0, 255, 80, 0.3);
+    position: relative;
+    transition: all 0.3s;
+}
+
+.shape-container.Circle { border-radius: 50%; }
+.shape-container.Square { border-radius: 0; }
+.shape-container.Rectangle { width: 140px; height: 80px; }
+.shape-container.Diamond { transform: rotate(45deg); width: 80px; height: 80px; }
+.shape-container.Trapezium { clip-path: polygon(20% 0, 80% 0, 100% 100%, 0 100%); }
+
+.shape-quarter {
+    position: absolute;
+    width: 50%;
+    height: 50%;
+    background: #00ff50;
+    box-shadow: 0 0 15px #00ff50;
+    transition: all 0.3s;
+}
+
+.quarter-0 { top: 0; left: 0; } /* TL */
+.quarter-1 { top: 0; right: 0; } /* TR */
+.quarter-2 { bottom: 0; left: 0; } /* BL */
+.quarter-3 { bottom: 0; right: 0; } /* BR */
+
+/* Circle Specific Radii */
+.type-Circle.quarter-0 { border-radius: 100% 0 0 0; }
+.type-Circle.quarter-1 { border-radius: 0 100% 0 0; }
+.type-Circle.quarter-2 { border-radius: 0 0 0 100%; }
+.type-Circle.quarter-3 { border-radius: 0 0 100% 0; }
+
+/* Rectangle adjustment */
+.Rectangle .shape-quarter { width: 50%; height: 50%; }
+
+.clue-hint {
+    font-size: 0.8rem;
+    color: #00cc40;
+    margin-top: 10px;
+}
+
+.room-hint-box {
+    margin-top: 15px;
+    background: rgba(0, 40, 0, 0.8);
+    border: 1px dashed #00ff50;
+    padding: 10px 20px;
+    color: #00ff50;
+    font-size: 0.9rem;
+    max-width: 400px;
+    text-align: center;
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 
 /* Glitch effect overlay */
 .glitch-overlay {
@@ -37,60 +220,16 @@
 }
 
 @keyframes glitch {
-  0% {
-    transform: translate(0);
-    opacity: 0.8;
-    filter: none;
-  }
-
-  5% {
-    transform: translate(-8px, 6px);
-    opacity: 1;
-    filter: contrast(120%);
-  }
-
-  10% {
-    transform: translate(8px, -6px);
-    opacity: 0.4;
-    filter: none;
-  }
-
-  15% {
-    transform: translate(-3px, 2px);
-    opacity: 0.8;
-  }
-
-  20% {
-    transform: translate(0);
-    opacity: 0.8;
-  }
-
-  45% {
-    transform: translate(0);
-    opacity: 0.8;
-  }
-
-  50% {
-    transform: translate(12px, -4px) scale(1.02);
-    opacity: 1;
-    filter: hue-rotate(45deg);
-  }
-
-  55% {
-    transform: translate(-12px, 4px) scale(1);
-    opacity: 0.3;
-  }
-
-  60% {
-    transform: translate(0);
-    opacity: 0.8;
-    filter: none;
-  }
-
-  100% {
-    transform: translate(0);
-    opacity: 0.8;
-  }
+  0% { transform: translate(0); opacity: 0.8; filter: none; }
+  5% { transform: translate(-8px, 6px); opacity: 1; filter: contrast(120%); }
+  10% { transform: translate(8px, -6px); opacity: 0.4; filter: none; }
+  15% { transform: translate(-3px, 2px); opacity: 0.8; }
+  20% { transform: translate(0); opacity: 0.8; }
+  45% { transform: translate(0); opacity: 0.8; }
+  50% { transform: translate(12px, -4px) scale(1.02); opacity: 1; filter: hue-rotate(45deg); }
+  55% { transform: translate(-12px, 4px) scale(1); opacity: 0.3; }
+  60% { transform: translate(0); opacity: 0.8; filter: none; }
+  100% { transform: translate(0); opacity: 0.8; }
 }
 
 .puzzle-panel {
@@ -100,12 +239,13 @@
     transform: translate(-50%, -50%);
     background: rgba(10, 20, 10, 0.9);
     border: 1px solid #00ff50;
-    padding: 40px;
-    width: 500px;
+    padding: 20px;
+    width: 90%;
+    max-width: 500px;
     z-index: 20;
     box-shadow: 0 0 20px rgba(0, 255, 80, 0.2);
     color: #00ff50;
-    font-family: 'Courier New', Courier, monospace;
+    font-family: inherit;
 }
 
 .puzzle-panel h2 {
@@ -167,28 +307,11 @@
     margin-top: 20px;
 }
 
-.back-btn {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    background: transparent;
-    border: none;
-    color: #00ff50;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 1rem;
-    cursor: pointer;
-    z-index: 20;
-}
-
-.back-btn:hover {
-    color: #fff;
-}
-
 /* Glitch Tiles */
 .glitch-tile {
     position: absolute;
-    width: 35px;
-    height: 35px;
+    width: 50px;
+    height: 50px;
     background: rgba(0, 255, 100, 0.2);
     border: 1px solid rgba(0, 255, 100, 0.4);
     cursor: crosshair;
@@ -203,7 +326,6 @@
 }
 
 .target-tile {
-    /* Slightly different animation behavior to make it hard but possible to spot */
     animation: target-glitch 2s infinite alternate;
 }
 
@@ -255,4 +377,37 @@
 @keyframes popup-fade {
     0% { opacity: 0; transform: translate(-50%, -20px); }
     100% { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* Laptop/Short screen adjustments */
+@media (max-height: 700px) {
+    .fragment-display {
+        padding: 10px;
+        max-width: 320px;
+    }
+    .shape-container {
+        width: 60px;
+        height: 60px;
+        margin: 10px auto;
+    }
+    .shape-container.Rectangle { width: 100px; height: 50px; }
+    .shape-container.Diamond { width: 50px; height: 50px; }
+    
+    .shape-quarter {
+        width: 50%;
+        height: 50%;
+    }
+    
+    /* Only apply border-radius to Circle type even in media query */
+    .type-Circle.quarter-0 { border-radius: 100% 0 0 0; }
+    .type-Circle.quarter-1 { border-radius: 0 100% 0 0; }
+    .type-Circle.quarter-2 { border-radius: 0 0 0 100%; }
+    .type-Circle.quarter-3 { border-radius: 0 0 100% 0; }
+    
+    .puzzle-panel {
+        padding: 15px;
+    }
+    .puzzle-panel h2 {
+        font-size: 1.2rem;
+    }
 }

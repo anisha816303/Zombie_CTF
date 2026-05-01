@@ -72,6 +72,7 @@ const Typewriter = ({ user, onComplete }) => {
   const [currentText, setCurrentText] = useState(""); // partial text of current line
   const [charIdx, setCharIdx] = useState(0);
   const [done, setDone] = useState(false);
+  const [showSkipConfirm, setShowSkipConfirm] = useState(false);
   const timeoutRef = useRef(null);
 
   useEffect(() => {
@@ -119,8 +120,25 @@ const Typewriter = ({ user, onComplete }) => {
 
   useEffect(() => () => clearTimeout(timeoutRef.current), []);
 
+  const handleSkip = () => {
+      if (!showSkipConfirm) {
+          setShowSkipConfirm(true);
+          return;
+      }
+      // Committing skip
+      clearTimeout(timeoutRef.current);
+      setDone(true);
+      if (onComplete) onComplete();
+  };
+
   return (
     <div className="typewriter-box">
+      {!done && (
+          <button className="skip-story-btn" onClick={handleSkip}>
+              {showSkipConfirm ? "[ CONFIRM SKIP? STORY IS IMPORTANT ]" : "[ SKIP STORY ]"}
+          </button>
+      )}
+
       {lines.map((line, i) =>
         line.text === "" ? (
           <br key={i} />
@@ -132,7 +150,7 @@ const Typewriter = ({ user, onComplete }) => {
       )}
 
       {/* Currently typing line */}
-      {currentLine < LINES.length && LINES[currentLine].text !== "" && (
+      {currentLine < LINES.length && LINES[currentLine].text !== "" && !done && (
         <div className={`tw-line tw-typing ${LINES[currentLine].className || ""}`}>
           {currentText}
           <span className="tw-cursor">█</span>

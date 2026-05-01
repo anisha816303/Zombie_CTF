@@ -5,7 +5,7 @@
   align-items: center;
   background-color: #050505;
   color: #00ff50;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: 'Share Tech Mono', monospace;
   background-image: 
     linear-gradient(rgba(0, 255, 80, 0.05) 1px, transparent 1px),
     linear-gradient(90deg, rgba(0, 255, 80, 0.05) 1px, transparent 1px);
@@ -16,7 +16,8 @@
   background: rgba(10, 20, 10, 0.9);
   border: 1px solid #00ff50;
   padding: 40px;
-  width: 400px;
+  width: 100%;
+  max-width: 400px;
   box-shadow: 0 0 20px rgba(0, 255, 80, 0.2);
   position: relative;
   overflow: hidden;
@@ -113,6 +114,7 @@
   cursor: pointer;
   text-decoration: underline;
   font-size: 0.8rem;
+  margin: 5px 10px;
 }
 
 .switch-btn:hover {

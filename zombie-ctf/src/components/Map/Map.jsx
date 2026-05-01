@@ -59,6 +59,7 @@ const Map = ({ onEnterLab, onEnterSectorB, onEnterMedBay, user, showAdminBtn, on
   const [popup, setPopup] = useState(null);         // node id of locked popup
   const [warningIdx, setWarningIdx] = useState(0);
   const [currentTime, setCurrentTime] = useState("");
+  const [resetKey, setResetKey] = useState(0);
   const areaRef = useRef(null);
 
   let targetNodeId = "lab";
@@ -151,9 +152,11 @@ const Map = ({ onEnterLab, onEnterSectorB, onEnterMedBay, user, showAdminBtn, on
       });
       const data = await res.json();
       if (data.success) {
-        // Update user state and reload or just let React re-render
-        // Since we are resetting, we might want to restart the typewriter
-        window.location.reload(); 
+        setUser(data.user);
+        setTypewriterDone(false);
+        setTargetVisible(false);
+        setPopup(null);
+        setResetKey(prev => prev + 1);
       }
     } catch (err) {
       console.error("Reset failed", err);
@@ -187,7 +190,7 @@ const Map = ({ onEnterLab, onEnterSectorB, onEnterMedBay, user, showAdminBtn, on
       <div className="map-content">
         {/* Left — typewriter */}
         <div className="typewriter-panel">
-          <Typewriter user={user} onComplete={() => setTypewriterDone(true)} />
+          <Typewriter key={resetKey} user={user} onComplete={() => setTypewriterDone(true)} />
         </div>
 
         {/* Right — map nodes */}

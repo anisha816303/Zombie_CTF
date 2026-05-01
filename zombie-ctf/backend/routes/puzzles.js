@@ -4,14 +4,14 @@ const User = require('../models/User');
 
 // Puzzle configuration (testing logic)
 const PUZZLES = {
-  lab: { answer: 'genesis' }, // Example answer
+  lab: { answer: 'it spreads through everyone' }, // Example answer
   sector_b: { answer: 'containment' },
   med_bay: { answer: 'antidote' }
 };
 
 // Zombie threshold
 const ZOMBIE_THRESHOLD = 1; // 1 for testing
-const ZOMBIE_CHANCE = 0.5; // 50% chance for testing!
+const ZOMBIE_CHANCE = 0.3; // 50% chance for testing!
 
 router.post('/submit', async (req, res) => {
   try {

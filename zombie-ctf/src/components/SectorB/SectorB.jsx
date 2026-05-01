@@ -32,6 +32,14 @@ const SectorB = ({ onBack, user, setUser }) => {
         }
     };
 
+    const handleReset = () => {
+        setFlagInput("");
+        setMessage("");
+        setTerminalVisible(false);
+        setPopupText("");
+        setPowerSequence([]);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setMessage("Checking...");
@@ -62,7 +70,10 @@ const SectorB = ({ onBack, user, setUser }) => {
         <div className="sectorb-container">
             <div className="glitch-overlay"></div>
             
-            <button className="back-btn" onClick={onBack}>[ RETURN TO MAP ]</button>
+            <div className="location-header">
+                <button className="back-btn" onClick={onBack}>[ RETURN TO MAP ]</button>
+                <button className="reset-puzzle-btn" onClick={handleReset}>[ RESET PUZZLE ]</button>
+            </div>
 
             {!found && !terminalVisible && (
                 <>

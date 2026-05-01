@@ -175,6 +175,27 @@
     inset 0 0 30px rgba(0,0,0,0.5);
 }
 
+.skip-story-btn {
+    background: rgba(0, 255, 80, 0.05);
+    border: 1px solid rgba(0, 255, 80, 0.3);
+    color: rgba(0, 255, 80, 0.6);
+    padding: 6px 12px;
+    font-family: inherit;
+    font-size: 0.75rem;
+    cursor: pointer;
+    margin-bottom: 15px;
+    transition: all 0.2s;
+    display: block;
+    width: 100%;
+    text-align: left;
+}
+
+.skip-story-btn:hover {
+    background: rgba(0, 255, 80, 0.2);
+    color: #00ff50;
+    border-color: #00ff50;
+}
+
 .typewriter-box::-webkit-scrollbar { width: 4px; }
 .typewriter-box::-webkit-scrollbar-track { background: transparent; }
 .typewriter-box::-webkit-scrollbar-thumb { background: rgba(0,255,80,0.3); border-radius: 2px; }

@@ -62,7 +62,7 @@ const Lobby = ({ user, onStartGame }) => {
                         </div>
                     ))}
                     {/* Empty slots */}
-                    {[...Array(Math.max(0, 4 - players.length))].map((_, i) => (
+                    {[...Array(Math.max(0, 30 - players.length))].map((_, i) => (
                         <div key={i} className="player-card empty-slot">
                             <span>WAITING...</span>
                         </div>
