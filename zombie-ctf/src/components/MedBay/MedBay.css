@@ -5,15 +5,16 @@
     height: 100vh;
     width: 100vw;
     margin: 0;
-    padding: 0;
-    background: url("/medbay-bg.jpeg") center/cover no-repeat;
-    overflow: hidden;
+    padding: 80px 20px 40px;
+    background: url("/medbay-bg.jpeg") center/cover no-repeat fixed;
+    overflow-y: auto;
+    overflow-x: hidden;
     color: #ff3333;
     font-family: 'Share Tech Mono', monospace;
 }
 
 .location-header {
-    position: absolute;
+    position: fixed;
     top: 20px;
     left: 20px;
     right: 20px;
@@ -41,10 +42,8 @@
 
 /* Inherits the puzzle-panel and other utility classes from index.css zombie mode or global CSS, but we can reuse SectorB CSS logic */
 .medbay-container .puzzle-panel {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    position: relative;
+    margin: 10vh auto 20px auto;
     background: rgba(20, 0, 0, 0.9);
     border: 1px solid #ff3333;
     padding: 20px;
