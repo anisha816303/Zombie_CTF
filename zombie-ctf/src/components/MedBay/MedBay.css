@@ -1,0 +1,189 @@
+.medbay-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 100vw;
+    margin: 0;
+    padding: 0;
+    background: url("/medbay-bg.png") center/cover no-repeat;
+    overflow: hidden;
+    color: #ff3333;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+/* Inherits the puzzle-panel and other utility classes from index.css zombie mode or global CSS, but we can reuse SectorB CSS logic */
+.medbay-container .puzzle-panel {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(20, 0, 0, 0.9);
+    border: 1px solid #ff3333;
+    padding: 40px;
+    width: 500px;
+    z-index: 20;
+    box-shadow: 0 0 20px rgba(255, 0, 0, 0.2);
+}
+
+.medbay-container .puzzle-panel h2 {
+    margin-top: 0;
+    text-align: center;
+    border-bottom: 1px solid #ff3333;
+    padding-bottom: 10px;
+}
+
+.medbay-container .puzzle-clue {
+    margin: 20px 0;
+    padding: 10px;
+    background: rgba(255, 0, 0, 0.1);
+    border-left: 4px solid #ff3333;
+    font-style: italic;
+}
+
+.medbay-container .puzzle-form input {
+    width: 100%;
+    padding: 10px;
+    background: transparent;
+    border: 1px solid #ff3333;
+    color: #ff3333;
+    font-family: inherit;
+    font-size: 1rem;
+    box-sizing: border-box;
+    margin-bottom: 20px;
+}
+
+.medbay-container .submit-btn {
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    border: 1px solid #ff3333;
+    color: #ff3333;
+    font-family: inherit;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.medbay-container .submit-btn:hover {
+    background: #ff3333;
+    color: #000;
+}
+
+.medbay-container .error-msg {
+    margin-top: 20px;
+    color: #ff3333;
+    text-align: center;
+    border: 1px solid #ff3333;
+    padding: 10px;
+    background: rgba(255, 51, 51, 0.1);
+}
+
+.medbay-container .success-msg {
+    color: #ff3333;
+    text-align: center;
+    margin-top: 20px;
+}
+
+.medbay-container .back-btn {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: transparent;
+    border: none;
+    color: #ff3333;
+    font-family: inherit;
+    font-size: 1rem;
+    cursor: pointer;
+    z-index: 20;
+}
+
+.medbay-container .back-btn:hover {
+    color: #fff;
+}
+
+/* Different effects for Medbay */
+.medbay-container {
+    animation: heartbeat-pulse 4s infinite;
+}
+
+@keyframes heartbeat-pulse {
+    0% {
+        box-shadow: inset 0 0 50px rgba(255, 0, 0, 0.2);
+    }
+
+    10% {
+        box-shadow: inset 0 0 150px rgba(255, 0, 0, 0.5);
+    }
+
+    20% {
+        box-shadow: inset 0 0 50px rgba(255, 0, 0, 0.2);
+    }
+
+    30% {
+        box-shadow: inset 0 0 150px rgba(255, 0, 0, 0.4);
+    }
+
+    100% {
+        box-shadow: inset 0 0 50px rgba(255, 0, 0, 0.2);
+    }
+}
+
+/* Hidden instrument button (small button near the alarm) */
+.hidden-instrument-btn {
+    position: absolute;
+    /* Near the red alarm on the centrifuge machine */
+    top: 43%;
+    left: 43%;
+    width: 40px;
+    height: 40px;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 50%;
+    z-index: 15;
+    transition: background 0.3s, box-shadow 0.3s;
+    /* Very subtle permanent glow to indicate it's a button */
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.4);
+    animation: alarm-blink 1s infinite alternate;
+}
+
+@keyframes alarm-blink {
+    0% {
+        box-shadow: 0 0 5px rgba(255, 0, 0, 0.2);
+    }
+
+    100% {
+        box-shadow: 0 0 20px rgba(255, 0, 0, 0.8);
+        background: rgba(255, 0, 0, 0.1);
+    }
+}
+
+.hidden-instrument-btn:hover {
+    background: rgba(255, 51, 51, 0.3);
+    box-shadow: 0 0 30px rgba(255, 0, 0, 1);
+    transform: scale(1.1);
+}
+
+/* Subtle progress overlay */
+.scan-progress-overlay {
+    position: absolute;
+    bottom: 30px;
+    right: 30px;
+    color: #ff3333;
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(255, 51, 51, 0.8);
+    pointer-events: none;
+    z-index: 20;
+    animation: text-pulse 1s infinite alternate;
+}
+
+@keyframes text-pulse {
+    0% {
+        opacity: 0.7;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}

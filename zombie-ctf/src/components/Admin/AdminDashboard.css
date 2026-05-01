@@ -1,0 +1,64 @@
+.admin-container {
+    padding: 40px;
+    background: #050505;
+    min-height: 100vh;
+    color: #00ff50;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.admin-header {
+    border-bottom: 2px solid #00ff50;
+    padding-bottom: 20px;
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.admin-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+}
+
+.players-list, .live-logs {
+    background: rgba(0, 255, 80, 0.05);
+    border: 1px solid rgba(0, 255, 80, 0.3);
+    padding: 20px;
+    border-radius: 4px;
+}
+
+.table-header {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    font-weight: bold;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(0, 255, 80, 0.2);
+    margin-bottom: 15px;
+}
+
+.player-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(0, 255, 80, 0.1);
+}
+
+.player-row.zombie {
+    color: #ff3333;
+}
+
+.logs-box {
+    height: 400px;
+    overflow-y: auto;
+    background: #000;
+    padding: 15px;
+    border: 1px solid #333;
+}
+
+.log-entry {
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+    border-left: 3px solid #00ff50;
+    padding-left: 10px;
+}

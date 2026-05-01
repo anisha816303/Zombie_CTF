@@ -1,0 +1,189 @@
+.sectorb-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 100vw;
+    margin: 0;
+    padding: 0;
+    background: url("/sectorb-bg.png") center/cover no-repeat;
+    overflow: hidden;
+    color: #00ff50;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+/* Same glitch effect overlay from Lab */
+.glitch-overlay {
+    position: absolute;
+    top: -5%;
+    left: -5%;
+    width: 110%;
+    height: 110%;
+    background:
+        repeating-linear-gradient(0deg,
+            rgba(0, 255, 0, 0.15),
+            rgba(0, 255, 0, 0.15) 2px,
+            transparent 2px,
+            transparent 5px),
+        repeating-linear-gradient(90deg,
+            rgba(255, 0, 0, 0.05),
+            rgba(255, 0, 0, 0.05) 1px,
+            transparent 1px,
+            transparent 3px);
+    animation: glitch 2s infinite alternate;
+    pointer-events: none;
+    mix-blend-mode: difference;
+    z-index: 10;
+}
+
+.puzzle-panel {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(10, 20, 10, 0.9);
+    border: 1px solid #00ff50;
+    padding: 40px;
+    width: 500px;
+    z-index: 20;
+    box-shadow: 0 0 20px rgba(0, 255, 80, 0.2);
+}
+
+.puzzle-panel h2 {
+    margin-top: 0;
+    text-align: center;
+    border-bottom: 1px solid #00ff50;
+    padding-bottom: 10px;
+}
+
+.puzzle-clue {
+    margin: 20px 0;
+    padding: 10px;
+    background: rgba(0, 255, 80, 0.1);
+    border-left: 4px solid #00ff50;
+    font-style: italic;
+}
+
+.puzzle-form input {
+    width: 100%;
+    padding: 10px;
+    background: transparent;
+    border: 1px solid #00ff50;
+    color: #00ff50;
+    font-family: inherit;
+    font-size: 1rem;
+    box-sizing: border-box;
+    margin-bottom: 20px;
+}
+
+.submit-btn {
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    border: 1px solid #00ff50;
+    color: #00ff50;
+    font-family: inherit;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.submit-btn:hover {
+    background: #00ff50;
+    color: #000;
+}
+
+.error-msg {
+    margin-top: 20px;
+    color: #ff3333;
+    text-align: center;
+    border: 1px solid #ff3333;
+    padding: 10px;
+    background: rgba(255, 51, 51, 0.1);
+}
+
+.success-msg {
+    color: #00ff50;
+    text-align: center;
+}
+
+.back-btn {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: transparent;
+    border: none;
+    color: #00ff50;
+    font-family: inherit;
+    font-size: 1rem;
+    cursor: pointer;
+    z-index: 20;
+}
+
+.back-btn:hover {
+    color: #fff;
+}
+
+/* Different effects for Sector B */
+.sectorb-container {
+    animation: neon-flicker 0.2s infinite alternate;
+}
+
+@keyframes neon-flicker {
+    0% { filter: contrast(1) brightness(1); }
+    100% { filter: contrast(1.1) brightness(0.9); box-shadow: inset 0 0 50px rgba(0, 255, 255, 0.1); }
+}
+
+/* Subtle Floating Hints */
+.sectorb-hints {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    text-align: right;
+    color: #00ffff;
+    font-weight: bold;
+    text-shadow: 0 0 5px #00ffff;
+    pointer-events: none;
+    z-index: 20;
+}
+.sequence-text {
+    font-size: 1.5rem;
+    margin-top: 10px;
+}
+
+/* Visible Relays */
+.hidden-relay {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    background: rgba(0, 255, 255, 0.1);
+    border: 1px solid rgba(0, 255, 255, 0.4);
+    cursor: pointer;
+    border-radius: 4px;
+    z-index: 15;
+    transition: all 0.2s;
+    box-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+    animation: relay-pulse 1.5s infinite alternate;
+}
+
+@keyframes relay-pulse {
+    0% { box-shadow: 0 0 5px rgba(0, 255, 255, 0.3); border-color: rgba(0, 255, 255, 0.2); }
+    100% { box-shadow: 0 0 15px rgba(0, 255, 255, 0.8); border-color: rgba(0, 255, 255, 0.6); }
+}
+
+.hidden-relay:hover {
+    background: rgba(0, 255, 255, 0.3);
+    box-shadow: 0 0 20px #00ffff;
+    transform: scale(1.1);
+}
+
+.hidden-relay:active {
+    background: #00ffff;
+    transform: scale(0.9);
+}
+
+/* Approximate coordinates based on Sector B image */
+/* Adjust these to align with the electrical box on the right wall */
+.relay-1 { top: 48%; left: 88%; }  /* Left side of fuse box */
+.relay-2 { top: 48%; left: 91%; }  /* Right side of fuse box */
+.relay-3 { top: 58%; left: 89.5%; } /* Bottom of fuse box */

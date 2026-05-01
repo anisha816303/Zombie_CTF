@@ -103,3 +103,36 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+/* Zombie Mode Styles */
+body.zombie-mode {
+  --text: #ff3333;
+  --text-h: #ff0000;
+  --bg: #1a0000;
+  --border: #4d0000;
+  --code-bg: #330000;
+  --accent: #ff0000;
+  --accent-bg: rgba(255, 0, 0, 0.15);
+  --accent-border: rgba(255, 0, 0, 0.5);
+  background: radial-gradient(circle at center, #2a0000 0%, #050000 100%) !important;
+  color: #ff3333 !important;
+}
+
+body.zombie-mode * {
+  color: #ff3333 !important;
+  border-color: #ff0000 !important;
+}
+
+body.zombie-mode .glitch-overlay {
+  background:
+    repeating-linear-gradient(0deg,
+      rgba(255, 0, 0, 0.15),
+      rgba(255, 0, 0, 0.15) 2px,
+      transparent 2px,
+      transparent 5px),
+    repeating-linear-gradient(90deg,
+      rgba(255, 0, 0, 0.05),
+      rgba(255, 0, 0, 0.05) 1px,
+      transparent 1px,
+      transparent 3px) !important;
+}

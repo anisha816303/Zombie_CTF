@@ -49,27 +49,56 @@ const NODES = [
   },
 ];
 
-// Warning messages cycle
-const WARNINGS = [
-  "WARNING: Infection levels rising",
-  "ALERT: Containment protocol failed",
-  "WARNING: Network instability detected",
-  "ALERT: Bio-hazard level CRITICAL",
-  "WARNING: Unknown signal traced — sector 7",
-];
 
-const Map = ({ onEnterLab }) => {
+
+import API_BASE_URL from "../../config";
+
+const Map = ({ onEnterLab, onEnterSectorB, onEnterMedBay, user, showAdminBtn, onOpenAdmin }) => {
   const [typewriterDone, setTypewriterDone] = useState(false);
-  const [labVisible, setLabVisible] = useState(false);
+  const [targetVisible, setTargetVisible] = useState(false);
   const [popup, setPopup] = useState(null);         // node id of locked popup
   const [warningIdx, setWarningIdx] = useState(0);
   const [currentTime, setCurrentTime] = useState("");
   const areaRef = useRef(null);
 
-  // Show lab node after typewriter + short delay
+  let targetNodeId = "lab";
+  if (user?.completedPuzzles >= 1) {
+    targetNodeId = user?.persona === "zombie" ? "med_bay" : "sector_b";
+  }
+
+  const getWarnings = () => {
+    if (!user || user.completedPuzzles === 0) {
+      return [
+        "WARNING: Infection levels rising",
+        "ALERT: Containment protocol failed",
+        "WARNING: Network instability detected",
+        "ALERT: Bio-hazard level CRITICAL",
+        "WARNING: Unknown signal traced — sector 7",
+      ];
+    }
+    if (user.persona === 'zombie') {
+      return [
+        "SYSTEM CORRUPTED",
+        "FLESH DETECTED IN MED BAY",
+        "HUNT INITIATED",
+        "HUNGER RISING",
+        "INFECTION SPREADING"
+      ];
+    }
+    return [
+      "WARNING: Sector B containment breach",
+      "ALERT: Stay clear of infected zones",
+      "WARNING: Hostile entities detected",
+      "EVACUATION PROTOCOL INITIATED"
+    ];
+  };
+
+  const WARNINGS = getWarnings();
+
+  // Show target node after typewriter + short delay
   useEffect(() => {
     if (typewriterDone) {
-      const t = setTimeout(() => setLabVisible(true), 600);
+      const t = setTimeout(() => setTargetVisible(true), 600);
       return () => clearTimeout(t);
     }
   }, [typewriterDone]);
@@ -80,7 +109,7 @@ const Map = ({ onEnterLab }) => {
       setWarningIdx((i) => (i + 1) % WARNINGS.length);
     }, 3500);
     return () => clearInterval(t);
-  }, []);
+  }, [WARNINGS.length]); // Added WARNINGS.length to dependency
 
   // Live clock
   useEffect(() => {
@@ -102,6 +131,33 @@ const Map = ({ onEnterLab }) => {
     if (node.id === "lab" && onEnterLab) {
       onEnterLab();
     }
+    // Sector B navigate
+    if (node.id === "sector_b" && onEnterSectorB) {
+      onEnterSectorB();
+    }
+    // Med Bay navigate
+    if (node.id === "med_bay" && onEnterMedBay) {
+      onEnterMedBay();
+    }
+  };
+
+  const handleReset = async () => {
+    if (!window.confirm("RESET ALL PROGRESS? This is for testing only.")) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/puzzles/reset`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uniqueId: user.uniqueId })
+      });
+      const data = await res.json();
+      if (data.success) {
+        // Update user state and reload or just let React re-render
+        // Since we are resetting, we might want to restart the typewriter
+        window.location.reload(); 
+      }
+    } catch (err) {
+      console.error("Reset failed", err);
+    }
   };
 
   return (
@@ -114,7 +170,11 @@ const Map = ({ onEnterLab }) => {
       {/* Top bar */}
       <div className="status-bar">
         <span className="status-left">PROJECT GENESIS — SECTOR MAP</span>
-        <span className="status-right">SYS-TIME: {currentTime} &nbsp;|&nbsp; NODE COUNT: {NODES.length}</span>
+        <div className="status-right">
+          {showAdminBtn && <button className="admin-debug-btn" onClick={onOpenAdmin}>[ ADMIN PANEL ]</button>}
+          <button className="reset-debug-btn" onClick={handleReset}>[ RESET PROGRESS ]</button>
+          &nbsp;|&nbsp; SYS-TIME: {currentTime} &nbsp;|&nbsp; NODE COUNT: {NODES.length}
+        </div>
       </div>
 
       {/* Corner warning */}
@@ -127,7 +187,7 @@ const Map = ({ onEnterLab }) => {
       <div className="map-content">
         {/* Left — typewriter */}
         <div className="typewriter-panel">
-          <Typewriter onComplete={() => setTypewriterDone(true)} />
+          <Typewriter user={user} onComplete={() => setTypewriterDone(true)} />
         </div>
 
         {/* Right — map nodes */}
@@ -153,25 +213,41 @@ const Map = ({ onEnterLab }) => {
 
           {/* Nodes */}
           {NODES.map((node) => {
-            /* Lab node hidden until typewriter done */
-            if (node.id === "lab" && !labVisible) return null;
+            /* Target node hidden until typewriter done */
+            if (node.id === targetNodeId && !targetVisible) return null;
+
+            // Dynamic node logic
+            let isLocked = node.locked;
+            let currentStatus = node.status;
+            
+            if (node.id === "lab") {
+              isLocked = false;
+              if (user?.completedPuzzles >= 1) currentStatus = "CLEARED";
+            }
+            if (node.id === "sector_b" && user?.completedPuzzles >= 1 && user?.persona === "person") {
+              isLocked = false;
+              currentStatus = "ONLINE";
+            }
+            if (node.id === "med_bay" && user?.completedPuzzles >= 1 && user?.persona === "zombie") {
+              isLocked = false;
+              currentStatus = "INFECTED";
+            }
 
             return (
               <div
                 key={node.id}
-                className={`map-node ${node.locked ? "node-locked" : "node-unlocked"} ${
-                  node.id === "lab" && labVisible ? "node-appear" : ""
-                }`}
+                className={`map-node ${isLocked ? "node-locked" : "node-unlocked"} ${node.id === targetNodeId && targetVisible ? "node-appear" : ""
+                  }`}
                 style={{
                   left: `${node.pos.x}%`,
                   top: `${node.pos.y}%`,
                 }}
-                onClick={() => handleNodeClick(node)}
-                title={node.locked ? "ACCESS DENIED" : `Enter ${node.label}`}
+                onClick={() => handleNodeClick({ ...node, locked: isLocked })}
+                title={isLocked ? "ACCESS DENIED" : `Enter ${node.label}`}
               >
                 <div className="node-icon">{node.emoji}</div>
                 <div className="node-label">{node.label}</div>
-                <div className="node-status">{node.status}</div>
+                <div className="node-status">{currentStatus}</div>
               </div>
             );
           })}
