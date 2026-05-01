@@ -11,7 +11,7 @@ const PUZZLES = {
 
 // Zombie threshold
 const ZOMBIE_THRESHOLD = 1; // 1 for testing
-const ZOMBIE_CHANCE = 0.2; // 50% chance for testing!
+const ZOMBIE_CHANCE = 0.5; // 50% chance for testing!
 
 router.post('/submit', async (req, res) => {
   try {
@@ -96,7 +96,7 @@ router.post('/reset', async (req, res) => {
     user.persona = 'person';
     user.isInfected = false;
     user.score = 0;
-    
+
     await user.save();
     res.json({ success: true, message: 'Progress reset!', user });
   } catch (error) {
