@@ -162,8 +162,8 @@ const SectorB = ({ onBack, user, setUser }) => {
                         onMouseDown={() => assignedStation === 'left' && setIsHolding(true)}
                         onMouseUp={() => setIsHolding(false)}
                         onMouseLeave={() => setIsHolding(false)}
-                        onTouchStart={() => assignedStation === 'left' && setIsHolding(true)}
-                        onTouchEnd={() => setIsHolding(false)}
+                        onTouchStart={(e) => { e.preventDefault(); assignedStation === 'left' && setIsHolding(true); }}
+                        onTouchEnd={(e) => { e.preventDefault(); setIsHolding(false); }}
                     >
                         <div className={`glow-bulb bulb-${assignedColor}`}></div>
                     </div>
@@ -173,8 +173,8 @@ const SectorB = ({ onBack, user, setUser }) => {
                         onMouseDown={() => assignedStation === 'right' && setIsHolding(true)}
                         onMouseUp={() => setIsHolding(false)}
                         onMouseLeave={() => setIsHolding(false)}
-                        onTouchStart={() => assignedStation === 'right' && setIsHolding(true)}
-                        onTouchEnd={() => setIsHolding(false)}
+                        onTouchStart={(e) => { e.preventDefault(); assignedStation === 'right' && setIsHolding(true); }}
+                        onTouchEnd={(e) => { e.preventDefault(); setIsHolding(false); }}
                     >
                         <div className={`glow-bulb bulb-${assignedColor}`}></div>
                     </div>
