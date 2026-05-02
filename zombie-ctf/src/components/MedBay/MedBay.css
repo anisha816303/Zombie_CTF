@@ -1,200 +1,275 @@
+/* ============================================
+   MED BAY — MORSE CODE PUZZLE (MOBILE-FIRST)
+   ============================================ */
+
 .medbay-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100vh;
-    width: 100vw;
-    margin: 0;
-    padding: 80px 20px 40px;
-    background: url("/medbay-bg.jpeg") center/cover no-repeat fixed;
-    overflow-y: auto;
-    overflow-x: hidden;
-    color: #ff3333;
+    position: fixed; top: 0; left: 0;
+    height: 100%; width: 100%;
+    background: url("/medbay-bg.jpeg") center/cover no-repeat;
+    background-attachment: scroll;
+    overflow: hidden;
+    color: #ff4444;
     font-family: 'Share Tech Mono', monospace;
-}
-
-.location-header {
-    position: fixed;
-    top: 20px;
-    left: 20px;
-    right: 20px;
-    display: flex;
-    justify-content: space-between;
-    z-index: 30;
-}
-
-.back-btn, .reset-puzzle-btn {
-    background: rgba(0, 0, 0, 0.6);
-    border: 1px solid #ff3333;
-    color: #ff3333;
-    padding: 8px 16px;
-    font-family: inherit;
-    cursor: pointer;
-    transition: all 0.3s;
-    font-size: 0.9rem;
-}
-
-.back-btn:hover, .reset-puzzle-btn:hover {
-    background: #ff3333;
-    color: #000;
-    box-shadow: 0 0 15px #ff3333;
-}
-
-/* Inherits the puzzle-panel and other utility classes from index.css zombie mode or global CSS, but we can reuse SectorB CSS logic */
-.medbay-container .puzzle-panel {
-    position: relative;
-    margin: 10vh auto 20px auto;
-    background: rgba(20, 0, 0, 0.9);
-    border: 1px solid #ff3333;
-    padding: 20px;
-    width: 90%;
-    max-width: 500px;
-    z-index: 20;
-    box-shadow: 0 0 20px rgba(255, 0, 0, 0.2);
-}
-
-.medbay-container .puzzle-panel h2 {
-    margin-top: 0;
-    text-align: center;
-    border-bottom: 1px solid #ff3333;
-    padding-bottom: 10px;
-}
-
-.medbay-container .puzzle-clue {
-    margin: 20px 0;
-    padding: 10px;
-    background: rgba(255, 0, 0, 0.1);
-    border-left: 4px solid #ff3333;
-    font-style: italic;
-}
-
-.medbay-container .puzzle-form input {
-    width: 100%;
-    padding: 10px;
-    background: transparent;
-    border: 1px solid #ff3333;
-    color: #ff3333;
-    font-family: inherit;
-    font-size: 1rem;
-    box-sizing: border-box;
-    margin-bottom: 20px;
-}
-
-.medbay-container .submit-btn {
-    width: 100%;
-    padding: 12px;
-    background: transparent;
-    border: 1px solid #ff3333;
-    color: #ff3333;
-    font-family: inherit;
-    font-size: 1.1rem;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.medbay-container .submit-btn:hover {
-    background: #ff3333;
-    color: #000;
-}
-
-.medbay-container .error-msg {
-    margin-top: 20px;
-    color: #ff3333;
-    text-align: center;
-    border: 1px solid #ff3333;
-    padding: 10px;
-    background: rgba(255, 51, 51, 0.1);
-}
-
-.medbay-container .success-msg {
-    color: #ff3333;
-    text-align: center;
-    margin-top: 20px;
-}
-
-
-/* Different effects for Medbay */
-.medbay-container {
     animation: heartbeat-pulse 4s infinite;
 }
 
 @keyframes heartbeat-pulse {
-    0% {
-        box-shadow: inset 0 0 50px rgba(255, 0, 0, 0.2);
-    }
-
-    10% {
-        box-shadow: inset 0 0 150px rgba(255, 0, 0, 0.5);
-    }
-
-    20% {
-        box-shadow: inset 0 0 50px rgba(255, 0, 0, 0.2);
-    }
-
-    30% {
-        box-shadow: inset 0 0 150px rgba(255, 0, 0, 0.4);
-    }
-
-    100% {
-        box-shadow: inset 0 0 50px rgba(255, 0, 0, 0.2);
-    }
+    0%   { box-shadow: inset 0 0 50px rgba(255,0,0,0.15); }
+    10%  { box-shadow: inset 0 0 120px rgba(255,0,0,0.45); }
+    20%  { box-shadow: inset 0 0 50px rgba(255,0,0,0.15); }
+    30%  { box-shadow: inset 0 0 100px rgba(255,0,0,0.35); }
+    100% { box-shadow: inset 0 0 50px rgba(255,0,0,0.15); }
 }
 
-/* Hidden instrument button (small button near the alarm) */
-.hidden-instrument-btn {
-    position: absolute;
-    /* Near the red alarm on the centrifuge machine */
-    top: 43%;
-    left: 43%;
-    width: 60px;
-    height: 60px;
-    background: transparent;
-    cursor: pointer;
-    border-radius: 50%;
-    z-index: 15;
-    transition: background 0.3s, box-shadow 0.3s;
-    /* Very subtle permanent glow to indicate it's a button */
-    box-shadow: 0 0 10px rgba(255, 0, 0, 0.4);
-    animation: alarm-blink 1s infinite alternate;
+/* ── Glitch overlay ── */
+.glitch-overlay {
+    position: absolute; top: -5%; left: -5%;
+    width: 110%; height: 110%;
+    background: repeating-linear-gradient(0deg, rgba(255,0,0,0.05), rgba(255,0,0,0.05) 1px, transparent 1px, transparent 4px);
+    animation: glitch-mb 3s infinite alternate;
+    pointer-events: none; z-index: 1;
+}
+@keyframes glitch-mb {
+    0%  { transform: translate(0); opacity: 0.5; }
+    5%  { transform: translate(-2px,1px); opacity: 0.8; }
+    10% { transform: translate(2px,-1px); opacity: 0.3; }
+    20% { transform: translate(0); opacity: 0.5; }
+    100%{ transform: translate(0); opacity: 0.5; }
 }
 
-@keyframes alarm-blink {
-    0% {
-        box-shadow: 0 0 5px rgba(255, 0, 0, 0.2);
-    }
+/* ── Header ── */
+.location-header {
+    position: fixed; top: 0; left: 0; right: 0;
+    height: 52px; padding: 0 12px;
+    display: flex; justify-content: space-between; align-items: center;
+    background: rgba(12,0,0,0.88);
+    border-bottom: 1px solid rgba(255,40,40,0.3);
+    z-index: 200; gap: 8px; backdrop-filter: blur(6px); box-sizing: border-box;
+}
+.back-btn, .reset-puzzle-btn {
+    background: rgba(0,0,0,0.55);
+    border: 1px solid rgba(220,40,40,0.45);
+    color: #ff6666; padding: 5px 10px;
+    font-family: inherit; cursor: pointer;
+    transition: all 0.25s; font-size: 0.7rem;
+    white-space: nowrap; border-radius: 2px; flex-shrink: 0;
+}
+.back-btn:hover, .reset-puzzle-btn:hover { background: rgba(180,0,0,0.35); color: #fff; }
 
-    100% {
-        box-shadow: 0 0 20px rgba(255, 0, 0, 0.8);
-        background: rgba(255, 0, 0, 0.1);
-    }
+/* ── Typewriter header ── */
+.typewriter-header {
+    position: fixed; top: 52px; left: 0; right: 0;
+    background: rgba(10,0,0,0.92);
+    border-bottom: 1px solid rgba(255,40,40,0.25);
+    z-index: 190; backdrop-filter: blur(6px);
+    transition: opacity 0.8s ease, max-height 0.8s ease, padding 0.8s ease;
+    max-height: 160px; overflow: hidden;
+    padding: 10px 14px; box-sizing: border-box;
+}
+.typewriter-header.hidden { opacity: 0; max-height: 0; padding: 0 14px; border: none; pointer-events: none; }
+.mb-tw-text { font-family: 'Share Tech Mono', monospace; font-size: 0.72rem; color: rgba(255,80,80,0.8); line-height: 1.7; white-space: pre-wrap; margin: 0; }
+.tw-cur { animation: blink 0.7s step-end infinite; color: #ff4444; }
+@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0;} }
+
+/* ── Scroll area ── */
+.medbay-scroll-area {
+    position: absolute; top: 52px; left: 0; right: 0; bottom: 0;
+    overflow-y: auto; overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding: 160px 14px 44px; box-sizing: border-box; z-index: 2;
+}
+/* When typewriter is hidden, reduce top padding */
+.medbay-container .typewriter-header.hidden ~ .medbay-scroll-area,
+.medbay-scroll-area { padding-top: 14px; }
+
+/* ── ECG Monitor ── */
+.ecg-wrap {
+    background: #060808;
+    border: 1px solid rgba(255,40,40,0.25);
+    border-radius: 4px; overflow: hidden;
+    box-shadow: 0 0 30px rgba(255,0,0,0.08), inset 0 0 20px rgba(0,0,0,0.5);
+    margin-bottom: 14px;
+}
+.ecg-header {
+    padding: 7px 12px;
+    background: rgba(0,0,0,0.6);
+    border-bottom: 1px solid rgba(255,40,40,0.15);
+    font-size: 0.62rem; color: rgba(255,80,80,0.6); letter-spacing: 2px;
+    display: flex; align-items: center; gap: 8px;
+}
+.ecg-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #ff3333;
+    animation: dot-pulse 0.8s infinite alternate;
+}
+@keyframes dot-pulse { from{opacity:0.5;}to{opacity:1;box-shadow:0 0 8px #ff3333;} }
+.ecg-live {
+    margin-left: auto;
+    color: #ff3333; font-size: 0.58rem; letter-spacing: 3px;
+    animation: live-blink 1.2s infinite;
+}
+@keyframes live-blink { 0%,100%{opacity:1;}50%{opacity:0.2;} }
+
+.ecg-canvas {
+    width: 100%; height: 56px; display: block;
+    background: #060808;
 }
 
-.hidden-instrument-btn:hover {
-    background: rgba(255, 51, 51, 0.3);
-    box-shadow: 0 0 30px rgba(255, 0, 0, 1);
-    transform: scale(1.1);
+/* ── Play controls ── */
+.ecg-controls {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 8px; flex-wrap: wrap;
+}
+.ecg-play-btn {
+    background: rgba(20,0,0,0.8);
+    border: 1px solid rgba(220,40,40,0.5);
+    color: #ff6666; font-family: 'Share Tech Mono', monospace;
+    font-size: 0.75rem; letter-spacing: 2px;
+    padding: 8px 16px; cursor: pointer; border-radius: 2px;
+    transition: all 0.2s; flex-shrink: 0;
+}
+.ecg-play-btn:hover, .ecg-play-btn.active {
+    background: rgba(180,0,0,0.4);
+    border-color: #ff4444; color: #fff;
+    box-shadow: 0 0 12px rgba(255,0,0,0.2);
+}
+.ecg-play-btn.active { animation: btn-pulse 1.2s infinite alternate; }
+@keyframes btn-pulse {
+    from { box-shadow: 0 0 8px rgba(255,0,0,0.2); }
+    to   { box-shadow: 0 0 18px rgba(255,0,0,0.5); }
+}
+.ecg-play-note { font-size: 0.62rem; color: rgba(255,80,80,0.4); letter-spacing: 1px; }
+.ecg-footer {
+    padding: 5px 12px;
+    background: rgba(0,0,0,0.4);
+    border-top: 1px solid rgba(255,40,40,0.1);
+    display: flex; justify-content: space-between;
+    font-size: 0.58rem; color: rgba(255,60,60,0.4); letter-spacing: 1px;
 }
 
-/* Subtle progress overlay */
-.scan-progress-overlay {
-    position: absolute;
-    bottom: 30px;
-    right: 30px;
-    color: #ff3333;
-    font-size: 1.5rem;
-    font-weight: bold;
-    text-shadow: 0 0 10px rgba(255, 51, 51, 0.8);
-    pointer-events: none;
-    z-index: 20;
-    animation: text-pulse 1s infinite alternate;
+/* ── Signal Display ── */
+.signal-display {
+    background: rgba(10,0,0,0.75);
+    border: 1px solid rgba(255,40,40,0.2);
+    border-radius: 3px; padding: 14px;
+    margin-bottom: 12px;
+}
+.signal-label {
+    font-size: 0.6rem; letter-spacing: 3px;
+    color: rgba(255,80,80,0.55); margin-bottom: 12px;
+}
+.signal-groups {
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;
+    padding: 8px 0;
+}
+.signal-group { display: flex; gap: 4px; align-items: flex-end; }
+.signal-sym {
+    display: flex; align-items: center; justify-content: center;
+    color: #ff4444; font-size: 1.5rem; line-height: 1;
+    text-shadow: 0 0 10px rgba(255,40,40,0.7);
+    font-family: 'Share Tech Mono', monospace; font-weight: bold;
+    transition: text-shadow 0.2s;
+}
+.signal-sym.dot { font-size: 1.2rem; opacity: 0.9; }
+.signal-sym.dash { font-size: 1.6rem; letter-spacing: -2px; }
+
+.signal-note {
+    margin-top: 10px; font-size: 0.62rem;
+    color: rgba(255,60,60,0.35); letter-spacing: 1px;
+    border-top: 1px solid rgba(255,40,40,0.1);
+    padding-top: 8px; font-style: italic;
 }
 
-@keyframes text-pulse {
-    0% {
-        opacity: 0.7;
-    }
+/* ── Morse Reference ── */
+.morse-ref {
+    background: rgba(8,0,0,0.7);
+    border: 1px solid rgba(255,40,40,0.18);
+    border-radius: 3px; margin-bottom: 14px; overflow: hidden;
+}
+.morse-ref-toggle {
+    width: 100%; background: transparent;
+    border: none; color: rgba(255,80,80,0.5);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem; letter-spacing: 2px;
+    padding: 10px 14px; cursor: pointer; text-align: left;
+    transition: color 0.2s;
+}
+.morse-ref-toggle:hover { color: rgba(255,100,100,0.8); }
+.morse-ref-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: rgba(255,40,40,0.08);
+    border-top: 1px solid rgba(255,40,40,0.12);
+    padding: 10px;
+}
+.morse-ref-cell {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 5px 4px; gap: 2px;
+}
+.morse-ref-letter {
+    font-size: 0.7rem; font-weight: bold; color: rgba(255,100,100,0.7);
+}
+.morse-ref-code {
+    font-size: 0.75rem; color: rgba(255,60,60,0.55); letter-spacing: 1px;
+}
 
-    100% {
-        opacity: 1;
-    }
+/* ── Decode Panel ── */
+.mb-decode-panel {
+    background: rgba(12,0,0,0.85);
+    border: 1px solid rgba(255,40,40,0.3);
+    border-radius: 4px; padding: 16px 14px;
+    box-shadow: 0 0 20px rgba(255,0,0,0.06);
+}
+.mb-decode-label {
+    font-size: 0.65rem; letter-spacing: 3px;
+    color: rgba(255,80,80,0.6); margin-bottom: 12px;
+}
+.mb-decode-form { display: flex; flex-direction: column; gap: 10px; }
+.mb-decode-form input {
+    background: rgba(0,0,0,0.7);
+    border: 1px solid rgba(220,40,40,0.35);
+    color: #ff8888; font-family: 'Share Tech Mono', monospace;
+    font-size: 0.9rem; padding: 11px 14px;
+    width: 100%; box-sizing: border-box; border-radius: 2px; outline: none;
+    transition: border-color 0.2s;
+}
+.mb-decode-form input:focus {
+    border-color: rgba(255,60,60,0.6);
+    box-shadow: 0 0 10px rgba(255,0,0,0.1);
+}
+.mb-submit-btn {
+    background: linear-gradient(135deg, #1a0000, #2e0000);
+    border: 1px solid rgba(220,40,40,0.5);
+    color: #ff6666; font-family: 'Share Tech Mono', monospace;
+    font-size: 0.78rem; letter-spacing: 3px;
+    padding: 12px; cursor: pointer; border-radius: 2px;
+    transition: all 0.2s;
+}
+.mb-submit-btn:hover { background: linear-gradient(135deg, #2e0000, #460000); border-color: #ff4444; color: #fff; box-shadow: 0 0 14px rgba(255,0,0,0.2); }
+
+.mb-message {
+    margin-top: 10px; padding: 9px 12px; font-size: 0.75rem;
+    text-align: center; border-radius: 2px; letter-spacing: 1px;
+}
+.mb-message.ok { color: #ff8888; border: 1px solid rgba(255,60,60,0.35); background: rgba(255,0,0,0.08); }
+.mb-message.err { color: #ff4444; border: 1px solid rgba(255,40,40,0.25); background: rgba(255,0,0,0.05); }
+
+/* ── Success ── */
+.mb-success {
+    text-align: center; padding: 44px 20px;
+    animation: fadeUp 0.5s ease;
+}
+@keyframes fadeUp { from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);} }
+.mb-success-icon { font-size: 3rem; margin-bottom: 14px; }
+.mb-success h2 { color: #ff6666; font-size: 0.9rem; letter-spacing: 3px; margin-bottom: 8px; }
+.mb-success p  { color: rgba(255,100,100,0.45); font-size: 0.72rem; letter-spacing: 2px; }
+
+/* ── Desktop ── */
+@media (min-width: 580px) {
+    .mb-decode-form { flex-direction: row; }
+    .mb-decode-form input { flex: 1; }
+    .mb-submit-btn { flex-shrink: 0; white-space: nowrap; padding: 12px 20px; }
+    .morse-ref-grid { grid-template-columns: repeat(6, 1fr); }
+    .signal-sym.dash { font-size: 1.8rem; }
 }

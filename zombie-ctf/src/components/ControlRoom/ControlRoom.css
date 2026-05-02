@@ -1,0 +1,150 @@
+/* ============================================
+   CONTROL ROOM — OSCILLOSCOPE PUZZLE
+   ============================================ */
+
+.control-room-container {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: url("/controlroom-bg.jpg") center/cover no-repeat;
+    background-color: #0b0c10;
+    overflow-y: auto; overflow-x: hidden;
+    color: #45f3ff;
+    font-family: 'Share Tech Mono', monospace;
+    padding-top: 52px;
+}
+
+/* ── CRT Monitor ── */
+.crt-monitor {
+    background: #020502;
+    border: 4px solid #1a1f1a;
+    border-radius: 8px;
+    margin: 20px auto;
+    width: 90%; max-width: 500px;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0, 255, 0, 0.05);
+    position: relative; overflow: hidden;
+}
+
+.crt-monitor::after {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    background-size: 100% 2px, 3px 100%;
+    pointer-events: none; z-index: 10;
+}
+
+.crt-header {
+    background: #081208;
+    padding: 6px 12px;
+    font-size: 0.7rem; color: #33ff33;
+    display: flex; justify-content: space-between;
+    border-bottom: 1px solid #1a331a;
+    letter-spacing: 2px; text-shadow: 0 0 4px #33ff33;
+}
+
+.osc-canvas {
+    width: 100%; height: 180px;
+    display: block; background: #020502;
+}
+
+/* ── Sliders Control Deck ── */
+.control-deck {
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 4px;
+    margin: 0 auto 20px;
+    width: 90%; max-width: 500px;
+    padding: 16px; box-sizing: border-box;
+    display: flex; gap: 12px; justify-content: space-between;
+}
+
+.fader-group {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    background: #0a0a0a; border: 1px solid #222; border-radius: 4px;
+    padding: 12px 6px; position: relative;
+}
+
+.fader-group.locked {
+    opacity: 0.5; pointer-events: none;
+    filter: grayscale(1);
+}
+
+.fader-label {
+    font-size: 0.65rem; color: #888;
+    letter-spacing: 1px; margin-bottom: 12px;
+}
+
+.fader-group.active .fader-label { color: #45f3ff; text-shadow: 0 0 5px #45f3ff; }
+
+.fader-input {
+    -webkit-appearance: none;
+    width: 120px; height: 6px;
+    background: #222; outline: none; border-radius: 3px;
+    transform: rotate(-90deg); margin: 60px 0;
+}
+
+.fader-input::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 24px; height: 14px; background: #555;
+    border: 2px solid #888; border-radius: 2px; cursor: pointer;
+}
+.fader-group.active .fader-input::-webkit-slider-thumb {
+    background: #45f3ff; border-color: #fff; box-shadow: 0 0 10px #45f3ff;
+}
+
+.fader-value { font-size: 0.8rem; font-weight: bold; margin-top: 10px; }
+.fader-group.active .fader-value { color: #fff; }
+
+.locked-overlay {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    background: rgba(0,0,0,0.6); font-size: 0.6rem; color: #f33;
+    text-align: center; padding: 10px; box-sizing: border-box;
+}
+
+/* ── Local Sync Box ── */
+.sync-box {
+    margin: 0 auto 20px; width: 90%; max-width: 500px;
+    background: rgba(0,30,0,0.8); border: 1px solid #33ff33;
+    padding: 12px; text-align: center; border-radius: 4px;
+    box-shadow: 0 0 15px rgba(0,255,0,0.2);
+}
+.sync-box h4 { margin: 0 0 4px; color: #33ff33; font-size: 0.8rem; letter-spacing: 2px; }
+.sync-code { font-size: 2rem; font-weight: bold; color: #fff; letter-spacing: 4px; text-shadow: 0 0 10px #fff; }
+
+/* ── Master Terminal ── */
+.master-terminal {
+    background: #000; border: 1px solid #444; border-left: 4px solid #45f3ff;
+    margin: 0 auto 30px; width: 90%; max-width: 500px;
+    padding: 16px; box-sizing: border-box;
+}
+.master-terminal h3 { margin: 0 0 12px; color: #aaa; font-size: 0.8rem; letter-spacing: 1px; }
+.master-input-wrap { display: flex; gap: 8px; }
+.master-input {
+    flex: 1; background: #111; border: 1px solid #333; color: #45f3ff;
+    padding: 10px; font-family: inherit; font-size: 1.2rem; letter-spacing: 4px; text-align: center; outline: none;
+}
+.master-input:focus { border-color: #45f3ff; box-shadow: 0 0 8px rgba(69,243,255,0.3); }
+.master-btn {
+    background: #112; border: 1px solid #45f3ff; color: #45f3ff;
+    padding: 0 16px; cursor: pointer; font-family: inherit; transition: 0.2s;
+}
+.master-btn:hover { background: #45f3ff; color: #000; }
+
+.term-msg { margin-top: 10px; font-size: 0.75rem; }
+.term-msg.err { color: #ff3333; }
+.term-msg.ok { color: #33ff33; }
+
+/* ── Final Lore Terminal ── */
+.lore-terminal {
+    margin: 0 auto 30px; width: 90%; max-width: 500px;
+    background: #000; border: 1px solid #33ff33; padding: 16px; box-sizing: border-box;
+    box-shadow: 0 0 20px rgba(0,255,0,0.1);
+}
+.lore-text {
+    color: #33ff33; font-size: 0.85rem; line-height: 1.6; white-space: pre-wrap; margin-bottom: 20px;
+    text-shadow: 0 0 4px rgba(51,255,51,0.5);
+}
+
+.final-gate-input { width: 100%; background: #111; border: 1px solid #555; color: #fff; padding: 10px; font-family: inherit; text-transform: uppercase; margin-bottom: 10px; }
+.final-gate-btn { width: 100%; background: #0a0; border: none; color: #000; padding: 12px; font-family: inherit; font-weight: bold; cursor: pointer; }
+.final-gate-btn:hover { background: #0c0; }

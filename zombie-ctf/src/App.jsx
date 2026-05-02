@@ -5,6 +5,7 @@ import Laboratory from "./components/Lab/Laboratory";
 import SectorB from "./components/SectorB/SectorB";
 import MedBay from "./components/MedBay/MedBay";
 import Archives from "./components/Archives/Archives";
+import ControlRoom from "./components/ControlRoom/ControlRoom";
 import Auth from "./components/Auth/Auth";
 import AdminDashboard from "./components/Admin/AdminDashboard";
 
@@ -93,6 +94,7 @@ function App() {
         onEnterSectorB={() => setScene("sector_b")}
         onEnterMedBay={() => setScene("med_bay")} 
         onEnterArchive={() => setScene("archive")}
+        onEnterControlRoom={() => setScene("control_room")}
         user={user} 
         setUser={setUser}
         showAdminBtn={user.isAdmin}
@@ -104,7 +106,9 @@ function App() {
         ? <SectorB onBack={() => setScene("map")} user={user} setUser={setUser} />
         : scene === "archive"
           ? <Archives onBack={() => setScene("map")} user={user} setUser={setUser} />
-          : <MedBay onBack={() => setScene("map")} user={user} setUser={setUser} />;
+          : scene === "control_room"
+            ? <ControlRoom onBack={() => setScene("map")} user={user} setUser={setUser} />
+            : <MedBay onBack={() => setScene("map")} user={user} setUser={setUser} />;
 }
 
 export default App;

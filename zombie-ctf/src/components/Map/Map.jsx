@@ -54,7 +54,7 @@ const NODES = [
 
 import API_BASE_URL from "../../config";
 
-const Map = ({ onEnterLab, onEnterSectorB, onEnterMedBay, onEnterArchive, user, showAdminBtn, onOpenAdmin, setUser }) => {
+const Map = ({ onEnterLab, onEnterSectorB, onEnterMedBay, onEnterArchive, onEnterControlRoom, user, showAdminBtn, onOpenAdmin, setUser }) => {
   const [typewriterDone, setTypewriterDone] = useState(false);
   const [targetVisible, setTargetVisible] = useState(false);
   const [popup, setPopup] = useState(null);         // node id of locked popup
@@ -189,6 +189,10 @@ const Map = ({ onEnterLab, onEnterSectorB, onEnterMedBay, onEnterArchive, user, 
     // Med Bay navigate
     if (node.id === "med_bay" && onEnterMedBay) {
       onEnterMedBay();
+    }
+    // Control Room navigate
+    if (node.id === "control" && onEnterControlRoom) {
+      onEnterControlRoom();
     }
   };
 
