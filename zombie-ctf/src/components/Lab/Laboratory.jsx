@@ -102,6 +102,8 @@ const Laboratory = ({ onBack, user, setUser }) => {
                 setFound(true);
                 setMessage(data.zombieConverted ? "SYSTEM ERROR: INFECTION DETECTED. YOU ARE NOW A ZOMBIE." : "Flag Accepted.");
                 setUser(data.user);
+                // Auto-return to map for smoother gameplay
+                setTimeout(() => onBack(), 700);
             } else {
                 setMessage(data.message || "Incorrect flag.");
             }
@@ -199,4 +201,4 @@ const Laboratory = ({ onBack, user, setUser }) => {
     );
 };
 
-export default Laboratory;
+export default Laboratory;

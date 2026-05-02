@@ -145,56 +145,163 @@
     100% { filter: contrast(1.1) brightness(0.9); box-shadow: inset 0 0 50px rgba(0, 255, 255, 0.1); }
 }
 
-/* Subtle Floating Hints */
-.sectorb-hints {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    text-align: right;
-    color: #00ffff;
-    font-weight: bold;
-    text-shadow: 0 0 5px #00ffff;
-    pointer-events: none;
+/* Objective Display */
+.sectorb-objective {
+    position: relative;
     z-index: 20;
-}
-.sequence-text {
-    font-size: 1.5rem;
-    margin-top: 10px;
-}
-
-/* Visible Relays */
-.hidden-relay {
-    position: absolute;
-    width: 50px;
-    height: 50px;
-    background: rgba(0, 255, 255, 0.1);
-    border: 1px solid rgba(0, 255, 255, 0.4);
-    cursor: pointer;
+    margin: 20px auto;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid #00ff50;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 0 15px rgba(0, 255, 80, 0.2);
     border-radius: 4px;
+}
+
+.sectorb-objective h3 {
+    margin: 0 0 10px 0;
+    font-size: 1rem;
+    color: #ff3333;
+}
+
+.highlight-text {
+    color: #fff;
+    font-size: 1.2rem;
+    text-shadow: 0 0 10px #fff;
+}
+
+.color-text {
+    font-weight: bold;
+    text-shadow: 0 0 8px currentColor;
+}
+
+.sub-hint {
+    font-size: 0.8rem;
+    opacity: 0.8;
+    margin-top: 5px;
+}
+
+/* Color Classes */
+.color-red { color: #ff3333; }
+.color-green { color: #00ff50; }
+.color-blue { color: #00ffff; }
+.color-orange { color: #ff9900; }
+
+/* The Robotic Arm Switches */
+.arm-switch {
+    position: absolute;
+    width: 120px;
+    height: 120px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px dashed rgba(255, 255, 255, 0.2);
+    cursor: pointer;
     z-index: 15;
-    transition: all 0.2s;
-    box-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
-    animation: relay-pulse 1.5s infinite alternate;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.3s;
 }
 
-@keyframes relay-pulse {
-    0% { box-shadow: 0 0 5px rgba(0, 255, 255, 0.3); border-color: rgba(0, 255, 255, 0.2); }
-    100% { box-shadow: 0 0 15px rgba(0, 255, 255, 0.8); border-color: rgba(0, 255, 255, 0.6); }
+.left-arm {
+    top: 62%;
+    left: 12%;
 }
 
-.hidden-relay:hover {
-    background: rgba(0, 255, 255, 0.3);
-    box-shadow: 0 0 20px #00ffff;
-    transform: scale(1.1);
+.right-arm {
+    top: 62%;
+    left: 36%;
 }
 
-.hidden-relay:active {
-    background: #00ffff;
-    transform: scale(0.9);
+.active-station {
+    border-color: #00ff50;
+    background: rgba(0, 255, 80, 0.1);
 }
 
-/* Approximate coordinates based on Sector B image */
-/* Adjust these to align with the electrical box on the right wall */
-.relay-1 { top: 48%; left: 88%; }  /* Left side of fuse box */
-.relay-2 { top: 48%; left: 91%; }  /* Right side of fuse box */
-.relay-3 { top: 58%; left: 89.5%; } /* Bottom of fuse box */
+.disabled-station {
+    border-color: rgba(255, 255, 255, 0.1);
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.holding {
+    background: rgba(0, 255, 80, 0.3) !important;
+    transform: scale(0.95);
+    box-shadow: 0 0 30px rgba(0, 255, 80, 0.5);
+}
+
+/* The Bulbs */
+.glow-bulb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    position: absolute;
+    top: -10px;
+    background: #fff;
+    box-shadow: 0 0 10px #fff;
+    animation: bulb-pulse 1.5s infinite alternate;
+}
+
+@keyframes bulb-pulse {
+    from { transform: scale(1); opacity: 0.8; }
+    to { transform: scale(1.2); opacity: 1; }
+}
+
+.bulb-red { background: #ff3333; box-shadow: 0 0 20px #ff3333; }
+.bulb-green { background: #00ff50; box-shadow: 0 0 20px #00ff50; }
+.bulb-blue { background: #00ffff; box-shadow: 0 0 20px #00ffff; }
+.bulb-orange { background: #ff9900; box-shadow: 0 0 20px #ff9900; }
+
+/* Sync Overlay */
+.sync-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 40;
+    backdrop-filter: blur(4px);
+}
+
+.sync-meter-container {
+    width: 80%;
+    max-width: 400px;
+    text-align: center;
+    padding: 30px;
+    background: rgba(10, 20, 10, 0.95);
+    border: 2px solid #00ff50;
+    box-shadow: 0 0 30px rgba(0, 255, 80, 0.3);
+}
+
+.sync-meter-container p {
+    font-size: 1.2rem;
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+}
+
+.sync-bar {
+    height: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid #00ff50;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.sync-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #005500, #00ff50);
+    transition: width 0.1s linear;
+    box-shadow: 0 0 10px #00ff50;
+}
+
+.sync-percent {
+    margin-top: 10px;
+    font-size: 1.5rem !important;
+    font-weight: bold;
+}

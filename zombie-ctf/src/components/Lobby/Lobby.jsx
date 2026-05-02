@@ -5,7 +5,7 @@ import API_BASE_URL from '../../config';
 
 const Lobby = ({ user, onStartGame }) => {
     const [players, setPlayers] = useState([]);
-    const socket = io(API_BASE_URL);
+    const [socketConnected, setSocketConnected] = useState(false);
 
     const fetchPlayers = () => {
         fetch(`${API_BASE_URL}/api/puzzles/players/${user.roomCode}`)
@@ -26,12 +26,35 @@ const Lobby = ({ user, onStartGame }) => {
 
     useEffect(() => {
         fetchPlayers();
-        socket.emit('join-room', user.roomCode);
 
-        socket.on('player-joined', () => fetchPlayers());
-        socket.on('game-started', () => onStartGame());
+        // Setup socket once and join
+        const sock = io(API_BASE_URL);
+        sock.on('connect', () => {
+            sock.emit('join-room', user.roomCode);
+            setSocketConnected(true);
+        });
 
-        return () => socket.disconnect();
+        sock.on('player-joined', () => fetchPlayers());
+        sock.on('game-started', () => onStartGame());
+
+        // Poll room status as a fallback for missed socket events
+        const poll = setInterval(async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/auth/room-status/${user.roomCode}`);
+                const data = await res.json();
+                if (data.success && data.status === 'active') {
+                    clearInterval(poll);
+                    onStartGame();
+                }
+            } catch (err) {
+                // ignore
+            }
+        }, 2000);
+
+        return () => {
+            clearInterval(poll);
+            sock.disconnect();
+        };
     }, [user.roomCode]);
 
     const handleStart = async () => {

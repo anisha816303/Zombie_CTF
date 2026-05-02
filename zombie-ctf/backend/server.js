@@ -27,7 +27,10 @@ app.set('io', io);
 io.on('connection', (socket) => {
   socket.on('join-room', (roomCode) => {
     socket.join(roomCode);
-    console.log(`Socket ${socket.id} joined room: ${roomCode}`);
+    socket.on('sector-b-action', (data) => {
+      // data: { roomCode, userId, station, color, isHolding }
+      io.to(data.roomCode).emit('sector-b-update', data);
+    });
   });
 });
 

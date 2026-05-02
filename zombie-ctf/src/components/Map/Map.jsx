@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { io } from 'socket.io-client';
 import "./Map.css";
 import Typewriter from "./Typewriter";
 
@@ -53,7 +54,7 @@ const NODES = [
 
 import API_BASE_URL from "../../config";
 
-const Map = ({ onEnterLab, onEnterSectorB, onEnterMedBay, user, showAdminBtn, onOpenAdmin }) => {
+const Map = ({ onEnterLab, onEnterSectorB, onEnterMedBay, onEnterArchive, user, showAdminBtn, onOpenAdmin, setUser }) => {
   const [typewriterDone, setTypewriterDone] = useState(false);
   const [targetVisible, setTargetVisible] = useState(false);
   const [popup, setPopup] = useState(null);         // node id of locked popup
@@ -62,9 +63,14 @@ const Map = ({ onEnterLab, onEnterSectorB, onEnterMedBay, user, showAdminBtn, on
   const [resetKey, setResetKey] = useState(0);
   const areaRef = useRef(null);
 
+  // Determine which node should appear as the current "next" target.
+  // 0 -> lab, 1 -> sector_b, 2 -> archive, 3 -> med_bay (zombie) or control (human)
   let targetNodeId = "lab";
-  if (user?.completedPuzzles >= 1) {
-    targetNodeId = user?.persona === "zombie" ? "med_bay" : "sector_b";
+  if (user) {
+    if (user.completedPuzzles === 0) targetNodeId = 'lab';
+    else if (user.completedPuzzles === 1) targetNodeId = 'sector_b';
+    else if (user.completedPuzzles === 2) targetNodeId = 'archive';
+    else if (user.completedPuzzles >= 3) targetNodeId = user.persona === 'zombie' ? 'med_bay' : 'control';
   }
 
   const getWarnings = () => {
@@ -95,6 +101,45 @@ const Map = ({ onEnterLab, onEnterSectorB, onEnterMedBay, user, showAdminBtn, on
   };
 
   const WARNINGS = getWarnings();
+
+  // Socket: listen for room events to update local user state
+  useEffect(() => {
+    if (!user) return;
+    const sock = io(API_BASE_URL);
+    sock.on('connect', () => {
+      sock.emit('join-room', user.roomCode);
+    });
+
+    sock.on('zombies-converted', (payload) => {
+      // payload.converted = [{ uniqueId, name }]
+      if (!payload || !payload.converted) return;
+      const me = payload.converted.find(c => c.uniqueId === user.uniqueId);
+      if (me) {
+        // fetch latest user state from server to ensure consistency
+        fetch(`${API_BASE_URL}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uniqueId: user.uniqueId })
+        }).then(r => r.json()).then(d => {
+          if (d.success && d.user) {
+            setUser(d.user);
+          } else {
+            // fallback: set persona locally
+            setUser(prev => ({ ...prev, persona: 'zombie', isInfected: true }));
+          }
+        }).catch(() => setUser(prev => ({ ...prev, persona: 'zombie', isInfected: true })));
+      }
+    });
+
+    sock.on('progress-update', (data) => {
+      if (!data) return;
+      if (data.userName === user.name) {
+        setUser(prev => ({ ...prev, score: data.newScore, persona: data.persona }));
+      }
+    });
+
+    return () => sock.disconnect();
+  }, [user?.uniqueId]);
 
   // Show target node after typewriter + short delay
   useEffect(() => {
@@ -131,6 +176,11 @@ const Map = ({ onEnterLab, onEnterSectorB, onEnterMedBay, user, showAdminBtn, on
     // Lab node → navigate
     if (node.id === "lab" && onEnterLab) {
       onEnterLab();
+    }
+
+    // expose archive entry
+    const handleArchive = (node) => {
+      if (onEnterArchive) onEnterArchive();
     }
     // Sector B navigate
     if (node.id === "sector_b" && onEnterSectorB) {
@@ -190,7 +240,7 @@ const Map = ({ onEnterLab, onEnterSectorB, onEnterMedBay, user, showAdminBtn, on
       <div className="map-content">
         {/* Left — typewriter */}
         <div className="typewriter-panel">
-          <Typewriter key={resetKey} user={user} onComplete={() => setTypewriterDone(true)} />
+            <Typewriter key={`${resetKey}-${user?.completedPuzzles || 0}-${user?.persona || 'person'}`} user={user} onComplete={() => setTypewriterDone(true)} />
         </div>
 
         {/* Right — map nodes */}
@@ -215,37 +265,78 @@ const Map = ({ onEnterLab, onEnterSectorB, onEnterMedBay, user, showAdminBtn, on
           </svg>
 
           {/* Nodes */}
-          {NODES.map((node) => {
+            {NODES.map((node) => {
             /* Target node hidden until typewriter done */
             if (node.id === targetNodeId && !targetVisible) return null;
 
             // Dynamic node logic
             let isLocked = node.locked;
             let currentStatus = node.status;
-            
+
+            // Lab: unlocked after start, cleared when first puzzle done
             if (node.id === "lab") {
               isLocked = false;
               if (user?.completedPuzzles >= 1) currentStatus = "CLEARED";
             }
-            if (node.id === "sector_b" && user?.completedPuzzles >= 1 && user?.persona === "person") {
+
+            // Sector B: unlocked after 1st puzzle and marked cleared after 2nd
+            if (node.id === "sector_b") {
+              if (user?.completedPuzzles >= 1) {
+                isLocked = false;
+                currentStatus = user?.completedPuzzles >= 2 ? "CLEARED" : "ONLINE";
+              }
+            }
+
+            // Archives: unlocks when completedPuzzles >= 2; blink when just unlocked
+            if (node.id === "archive") {
+              if (user?.completedPuzzles >= 2) {
+                isLocked = false;
+                currentStatus = "ONLINE";
+              }
+            }
+
+            // Med Bay: unlocks only after 3rd puzzle for zombies
+            if (node.id === "med_bay") {
+              if (user?.completedPuzzles >= 3 && user?.persona === "zombie") {
+                isLocked = false;
+                currentStatus = "INFECTED";
+              }
+            }
+
+            // Control/Comms: unlock for humans after 3rd puzzle
+            if (node.id === "control") {
+              if (user?.completedPuzzles >= 3 && user?.persona === "person") {
+                isLocked = false;
+                currentStatus = "COMMS";
+              }
+            }
+            if (node.id === "archive" && user?.completedPuzzles >= 2) {
               isLocked = false;
               currentStatus = "ONLINE";
             }
-            if (node.id === "med_bay" && user?.completedPuzzles >= 1 && user?.persona === "zombie") {
-              isLocked = false;
-              currentStatus = "INFECTED";
-            }
+
+            const blink = (
+              (node.id === 'archive' && user?.completedPuzzles === 2) ||
+              (node.id === 'control' && user?.completedPuzzles === 3 && user?.persona === 'person') ||
+              (node.id === 'med_bay' && user?.completedPuzzles === 3 && user?.persona === 'zombie')
+            );
 
             return (
               <div
                 key={node.id}
-                className={`map-node ${isLocked ? "node-locked" : "node-unlocked"} ${node.id === targetNodeId && targetVisible ? "node-appear" : ""
-                  }`}
+                className={`map-node ${isLocked ? "node-locked" : "node-unlocked"} ${node.id === targetNodeId && targetVisible ? "node-appear" : ""} ${blink ? 'node-blink' : ''}`}
                 style={{
                   left: `${node.pos.x}%`,
                   top: `${node.pos.y}%`,
                 }}
-                onClick={() => handleNodeClick({ ...node, locked: isLocked })}
+                onClick={() => {
+                  if (node.id === 'archive') {
+                    if (isLocked) setPopup(node.id);
+                    else if (onEnterArchive) onEnterArchive();
+                    return;
+                  }
+                  handleNodeClick({ ...node, locked: isLocked });
+                }}
                 title={isLocked ? "ACCESS DENIED" : `Enter ${node.label}`}
               >
                 <div className="node-icon">{node.emoji}</div>

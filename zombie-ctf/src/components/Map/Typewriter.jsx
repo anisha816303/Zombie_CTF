@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 
 const getLines = (user) => {
+  // Flow:
+  // 0 completed: lab intro -> LAB ACCESS
+  // 1 completed: sector b access
+  // 2 completed: unlock location archives
+  // 3+ completed: if zombie -> med bay access, else -> comms access
   if (!user || user.completedPuzzles === 0) {
     return [
       { text: "Initializing system...", delay: 80, pauseAfter: 600 },
@@ -29,7 +34,8 @@ const getLines = (user) => {
     ];
   }
   
-  if (user.persona === 'zombie') {
+  // After 3rd puzzle: show med bay for zombies, comms for humans
+  if (user && user.completedPuzzles >= 3 && user.persona === 'zombie') {
     return [
       { text: "WARNING: INFECTION DETECTED.", delay: 80, pauseAfter: 600, className: "tw-error" },
       { text: "...", delay: 200, pauseAfter: 400 },
@@ -47,20 +53,50 @@ const getLines = (user) => {
     ];
   }
 
+  if (user && user.completedPuzzles === 1) {
+    return [
+      { text: "Sector logs updated.", delay: 80, pauseAfter: 400 },
+      { text: "Genesis sequence contained.", delay: 55, pauseAfter: 600, className: "tw-highlight" },
+      { text: "...", delay: 200, pauseAfter: 400 },
+      { text: "But the facility is still locked down.", delay: 55, pauseAfter: 500 },
+      { text: "You found something in the lab. A partial blueprint.", delay: 60, pauseAfter: 800 },
+      { text: "", delay: 0, pauseAfter: 300 },
+      { text: "It points towards the manufacturing plant.", delay: 50, pauseAfter: 400 },
+      { text: "Sector B.", delay: 60, pauseAfter: 600 },
+      { text: "They were mass-producing it.", delay: 60, pauseAfter: 700 },
+      { text: "", delay: 0, pauseAfter: 300 },
+      { text: "Proceed with extreme caution.", delay: 45, pauseAfter: 800, className: "tw-warning" },
+      { text: "", delay: 0, pauseAfter: 400 },
+      { text: ">> SECTOR B ACCESS GRANTED", delay: 60, pauseAfter: 0, className: "tw-access", isLast: true },
+    ];
+  }
+
+  if (user && user.completedPuzzles === 2) {
+    return [
+      { text: "Location systems synced.", delay: 80, pauseAfter: 400 },
+      { text: "Blueprints reconciled.", delay: 55, pauseAfter: 600, className: "tw-highlight" },
+      { text: "...", delay: 200, pauseAfter: 400 },
+      { text: "Several sealed caches responded to the signature.", delay: 55, pauseAfter: 500 },
+      { text: "Sector B remains online — your earlier access still stands.", delay: 60, pauseAfter: 700 },
+      { text: "You delve deeper into archived manifests and corrupted manifests.", delay: 55, pauseAfter: 700 },
+      { text: "Among the listings: a dormant manifest that hints at a secondary facility.", delay: 55, pauseAfter: 800, className: "tw-warning" },
+      { text: "" , delay: 0, pauseAfter: 300 },
+      { text: "The archives respond to your credentials with a stuttering pulse.", delay: 60, pauseAfter: 700 },
+      { text: "You unlocked the Location Archives.", delay: 60, pauseAfter: 900, className: "tw-highlight" },
+      { text: "", delay: 0, pauseAfter: 300 },
+      { text: ">> LOCATION ARCHIVES UNLOCKED", delay: 60, pauseAfter: 0, className: "tw-access", isLast: true },
+    ];
+  }
+
+  // Default: after 3rd puzzle for non-zombies, unlock COMMS; handled above for zombies
   return [
-    { text: "Sector logs updated.", delay: 80, pauseAfter: 400 },
-    { text: "Genesis sequence contained.", delay: 55, pauseAfter: 600, className: "tw-highlight" },
+    { text: "Communication arrays responsive.", delay: 80, pauseAfter: 400 },
+    { text: "Networks bridged.", delay: 55, pauseAfter: 600, className: "tw-highlight" },
     { text: "...", delay: 200, pauseAfter: 400 },
-    { text: "But the facility is still locked down.", delay: 55, pauseAfter: 500 },
-    { text: "You found something in the lab. A partial blueprint.", delay: 60, pauseAfter: 800 },
+    { text: "You have access to facility comms.", delay: 55, pauseAfter: 500 },
+    { text: "Coordinate survivors. Call for extraction.", delay: 60, pauseAfter: 800, className: "tw-highlight" },
     { text: "", delay: 0, pauseAfter: 300 },
-    { text: "It points towards the manufacturing plant.", delay: 50, pauseAfter: 400 },
-    { text: "Sector B.", delay: 60, pauseAfter: 600 },
-    { text: "They were mass-producing it.", delay: 60, pauseAfter: 700 },
-    { text: "", delay: 0, pauseAfter: 300 },
-    { text: "Proceed with extreme caution.", delay: 45, pauseAfter: 800, className: "tw-warning" },
-    { text: "", delay: 0, pauseAfter: 400 },
-    { text: ">> SECTOR B ACCESS GRANTED", delay: 60, pauseAfter: 0, className: "tw-access", isLast: true },
+    { text: ">> COMMS ACCESS GRANTED", delay: 60, pauseAfter: 0, className: "tw-access", isLast: true },
   ];
 };
 

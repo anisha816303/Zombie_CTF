@@ -1,8 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { io } from 'socket.io-client';
 import Map from "./components/Map/Map";
 import Laboratory from "./components/Lab/Laboratory";
 import SectorB from "./components/SectorB/SectorB";
 import MedBay from "./components/MedBay/MedBay";
+import Archives from "./components/Archives/Archives";
 import Auth from "./components/Auth/Auth";
 import AdminDashboard from "./components/Admin/AdminDashboard";
 
@@ -30,6 +32,34 @@ function App() {
   if (user && roomStatus === 'waiting') {
     checkRoomStatus(user.roomCode);
   }
+
+  // Global socket listener so user state updates regardless of scene
+  useEffect(() => {
+    if (!user) return;
+    const socket = io(API_BASE_URL);
+    socket.on('connect', () => socket.emit('join-room', user.roomCode));
+
+    socket.on('zombies-converted', (payload) => {
+      if (!payload || !payload.converted) return;
+      const me = payload.converted.find(c => c.uniqueId === user.uniqueId);
+      if (me) {
+        // fetch authoritative user record
+        fetch(`${API_BASE_URL}/api/auth/login`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uniqueId: user.uniqueId })
+        }).then(r => r.json()).then(d => {
+          if (d.success && d.user) setUser(d.user);
+        }).catch(() => {});
+      }
+    });
+
+    socket.on('progress-update', (data) => {
+      if (!data) return;
+      if (data.userName === user.name) setUser(prev => ({ ...prev, score: data.newScore, persona: data.persona }));
+    });
+
+    return () => socket.disconnect();
+  }, [user?.uniqueId]);
 
   if (!user) {
     return <Auth onLogin={setUser} />;
@@ -59,9 +89,10 @@ function App() {
 
   return scene === "map"
     ? <Map 
-        onEnterLab={() => setScene("lab")} 
-        onEnterSectorB={() => setScene("sector_b")} 
+        onEnterLab={() => setScene("lab")}
+        onEnterSectorB={() => setScene("sector_b")}
         onEnterMedBay={() => setScene("med_bay")} 
+        onEnterArchive={() => setScene("archive")}
         user={user} 
         setUser={setUser}
         showAdminBtn={user.isAdmin}
@@ -71,7 +102,9 @@ function App() {
       ? <Laboratory onBack={() => setScene("map")} user={user} setUser={setUser} />
       : scene === "sector_b"
         ? <SectorB onBack={() => setScene("map")} user={user} setUser={setUser} />
-        : <MedBay onBack={() => setScene("map")} user={user} setUser={setUser} />;
+        : scene === "archive"
+          ? <Archives onBack={() => setScene("map")} user={user} setUser={setUser} />
+          : <MedBay onBack={() => setScene("map")} user={user} setUser={setUser} />;
 }
 
 export default App;
