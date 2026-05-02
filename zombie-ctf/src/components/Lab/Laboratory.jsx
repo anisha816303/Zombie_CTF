@@ -2,6 +2,20 @@ import React, { useState, useMemo, useEffect } from "react";
 import "./Laboratory.css";
 import API_BASE_URL from "../../config";
 
+const TypewriterHeader = ({ text }) => {
+    const [displayedText, setDisplayedText] = useState("");
+    useEffect(() => {
+        let i = 0;
+        const timer = setInterval(() => {
+            setDisplayedText(text.slice(0, i));
+            i++;
+            if (i > text.length) clearInterval(timer);
+        }, 50);
+        return () => clearInterval(timer);
+    }, [text]);
+    return <div className="typewriter-header">{displayedText}</div>;
+};
+
 const Laboratory = ({ onBack, user, setUser }) => {
     const [flagInput, setFlagInput] = useState("");
     const [message, setMessage] = useState("");
@@ -9,10 +23,8 @@ const Laboratory = ({ onBack, user, setUser }) => {
     const [popupText, setPopupText] = useState("");
     const [terminalVisible, setTerminalVisible] = useState(false);
     
-    // Clue and Fragment State
-    const [cluesLeft, setCluesLeft] = useState(3);
+    // Fragment State
     const [showClue, setShowClue] = useState(false);
-    const [roomHint, setRoomHint] = useState("");
     const [players, setPlayers] = useState([]);
     const [myFragment, setMyFragment] = useState(null);
 
@@ -74,15 +86,8 @@ const Laboratory = ({ onBack, user, setUser }) => {
         setTerminalVisible(false);
         setPopupText("");
         setShowClue(false);
-        setRoomHint("");
     };
 
-    const handleGetClue = () => {
-        if (cluesLeft > 0 && !showClue) {
-            setCluesLeft(cluesLeft - 1);
-            setRoomHint("Analyze the visual samples carefully. One data fragment behaves differently. Find it to extract your personal sequence.");
-        }
-    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -118,8 +123,9 @@ const Laboratory = ({ onBack, user, setUser }) => {
             
             <div className="location-header">
                 <button className="back-btn" onClick={onBack}>[ RETURN TO MAP ]</button>
-                <button className="reset-puzzle-btn" onClick={handleReset}>[ RESET PUZZLE ]</button>
             </div>
+
+            <TypewriterHeader text="Explore the lab... the data fragments are corrupted, but one remains untouched. Extract it to uncover the truth." />
 
             {!found && !terminalVisible && tiles.map(tile => (
                 <div 
@@ -135,37 +141,19 @@ const Laboratory = ({ onBack, user, setUser }) => {
                 />
             ))}
 
-            <div className={`clue-system ${terminalVisible ? 'terminal-open' : ''}`}>
-                {!showClue && (
-                    <button 
-                        className="clue-btn" 
-                        onClick={handleGetClue} 
-                        disabled={cluesLeft === 0 || !!roomHint}
-                    >
-                        {roomHint ? "HINT RECEIVED" : `GET CLUE (${cluesLeft}/3)`}
-                    </button>
-                )}
-                
-                {roomHint && !showClue && (
-                    <div className="room-hint-box">
-                        <p>{roomHint}</p>
+            {showClue && myFragment && !found && (
+                <div className="fragment-display">
+                    <div className="fragment-info">
+                        <p>OPERATOR ID: {user.name}</p>
+                        <p>GROUP: {myFragment.shapeType.toUpperCase()} {myFragment.groupId + 1}</p>
+                        <p>FRAGMENT: <span className="highlight">{myFragment.word}</span></p>
                     </div>
-                )}
-
-                {showClue && myFragment && (
-                    <div className="fragment-display">
-                        <div className="fragment-info">
-                            <p>OPERATOR ID: {user.name}</p>
-                            <p>GROUP: {myFragment.shapeType.toUpperCase()} {myFragment.groupId + 1}</p>
-                            <p>FRAGMENT: <span className="highlight">{myFragment.word}</span></p>
-                        </div>
-                        <div className={`shape-container ${myFragment.shapeType}`}>
-                            <div className={`shape-quarter quarter-${myFragment.quarter} type-${myFragment.shapeType}`}></div>
-                        </div>
-                        <p className="clue-hint">Match your {myFragment.shapeType} with 3 other operators. Enter the combined flag below.</p>
+                    <div className={`shape-container ${myFragment.shapeType}`}>
+                        <div className={`shape-quarter quarter-${myFragment.quarter} type-${myFragment.shapeType}`}></div>
                     </div>
-                )}
-            </div>
+                    <p className="clue-hint">Match your {myFragment.shapeType} with 3 other operators. Enter the combined flag below.</p>
+                </div>
+            )}
 
             {popupText && (
                 <div className={`tile-popup ${popupText.includes('EXTRACTED') ? 'popup-success' : 'popup-error'}`}>

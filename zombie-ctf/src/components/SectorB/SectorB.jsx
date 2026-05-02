@@ -1,138 +1,105 @@
-import React, { useState, useEffect, useRef } from "react";
-import { io } from 'socket.io-client';
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import "./SectorB.css";
 import API_BASE_URL from "../../config";
 
+const TypewriterHeader = ({ text }) => {
+    const [displayedText, setDisplayedText] = useState("");
+    useEffect(() => {
+        let i = 0;
+        const timer = setInterval(() => {
+            setDisplayedText(text.slice(0, i));
+            i++;
+            if (i > text.length) clearInterval(timer);
+        }, 50);
+        return () => clearInterval(timer);
+    }, [text]);
+    return <div className="typewriter-header">{displayedText}</div>;
+};
+
 const SectorB = ({ onBack, user, setUser }) => {
-    const [flagInput, setFlagInput] = useState("");
+    const [enteredCode, setEnteredCode] = useState("");
     const [message, setMessage] = useState("");
     const [found, setFound] = useState(false);
-
-    // Collaborative Game State
-    const [assignedStation, setAssignedStation] = useState(null); // 'left' or 'right'
-    const [assignedColor, setAssignedColor] = useState(null); // 'red', 'green', 'blue', 'orange'
-    const [isHolding, setIsHolding] = useState(false);
-    const [roomStates, setRoomStates] = useState({}); // userId -> { station, color, isHolding }
-    const [syncProgress, setSyncProgress] = useState(0);
-    const [isSynced, setIsSynced] = useState(false);
-    const [terminalVisible, setTerminalVisible] = useState(false);
+    const [showValvePanel, setShowValvePanel] = useState(false);
+    const [valveProgress, setValveProgress] = useState(0);
+    const [isValveDone, setIsValveDone] = useState(false);
     
-    const socketRef = useRef(null);
-    const progressInterval = useRef(null);
-
+    // Dynamic Assignment State
+    const [assignment, setAssignment] = useState({ color: 'red', valveIndex: 0, fullCode: "" });
+    
+    const turnInterval = useRef(null);
     const COLORS = ['red', 'green', 'blue', 'orange'];
 
-    // Initialize Station and Color
     useEffect(() => {
-        const station = Math.random() > 0.5 ? 'left' : 'right';
-        const color = COLORS[Math.floor(Math.random() * COLORS.length)];
-        setAssignedStation(station);
-        setAssignedColor(color);
+        // Fetch room users to assign color/valve in order of entry
+        fetch(`${API_BASE_URL}/api/auth/room-users/${user.roomCode}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const myIndex = data.users.findIndex(u => u.uniqueId === user.uniqueId);
+                    if (myIndex !== -1) {
+                        const colorIdx = Math.floor(myIndex / 5) % COLORS.length;
+                        const color = COLORS[colorIdx];
+                        const valveIndex = myIndex % 5;
+                        
+                        // Deterministic code for this room + color group
+                        const roomColorSeed = (user.roomCode + color).split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+                        const fullCode = (roomColorSeed * 12345).toString().slice(-5);
+                        const digit = fullCode[valveIndex];
+                        setAssignment({ color, valveIndex, fullCode, digit });
+                        console.log(`[DEV] SECTOR B OVERRIDE (${color.toUpperCase()}):`, fullCode);
+                    }
+                }
+            });
+    }, [user.roomCode, user.uniqueId]);
 
-        // Socket Setup
-        socketRef.current = io(API_BASE_URL);
-        socketRef.current.on('connect', () => {
-            socketRef.current.emit('join-room', user.roomCode);
-        });
+    const puzzleState = assignment;
 
-        socketRef.current.on('sector-b-update', (data) => {
-            if (data.userId === user.uniqueId) return;
-            setRoomStates(prev => ({
-                ...prev,
-                [data.userId]: { station: data.station, color: data.color, isHolding: data.isHolding }
-            }));
-        });
+    const startTurning = () => {
+        if (isValveDone) return;
+        turnInterval.current = setInterval(() => {
+            setValveProgress(prev => {
+                if (prev >= 100) {
+                    clearInterval(turnInterval.current);
+                    setIsValveDone(true);
+                    return 100;
+                }
+                return prev + 2;
+            });
+        }, 50);
+    };
 
-        return () => {
-            if (socketRef.current) socketRef.current.disconnect();
-            if (progressInterval.current) clearInterval(progressInterval.current);
-        };
-    }, []);
+    const stopTurning = () => {
+        if (turnInterval.current) clearInterval(turnInterval.current);
+    };
 
-    // Broadcast hold state
-    useEffect(() => {
-        if (!socketRef.current || !assignedStation || !assignedColor) return;
-        socketRef.current.emit('sector-b-action', {
-            roomCode: user.roomCode,
-            userId: user.uniqueId,
-            station: assignedStation,
-            color: assignedColor,
-            isHolding: isHolding
-        });
-    }, [isHolding, assignedStation, assignedColor]);
+    const handleKeypadPress = (num) => {
+        if (enteredCode.length < 5) setEnteredCode(prev => prev + num);
+    };
 
-    // Check for partner match and progress sync
-    useEffect(() => {
-        if (isSynced) return;
-
-        const partnerMatch = Object.values(roomStates).find(state => 
-            state.isHolding && 
-            state.color === assignedColor && 
-            state.station !== assignedStation
-        );
-
-        if (isHolding && partnerMatch) {
-            if (!progressInterval.current) {
-                progressInterval.current = setInterval(() => {
-                    setSyncProgress(prev => {
-                        if (prev >= 100) {
-                            clearInterval(progressInterval.current);
-                            progressInterval.current = null;
-                            handleSyncSuccess();
-                            return 100;
-                        }
-                        return prev + 5; // ~2 seconds to full
-                    });
-                }, 100);
+    const handleSubmitCode = async () => {
+        if (enteredCode === puzzleState.fullCode) {
+            setMessage("Checking database...");
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/puzzles/submit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ uniqueId: user.uniqueId, puzzleId: 'sector_b', answer: 'containment' })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    setFound(true);
+                    setMessage(data.zombieConverted ? "INFECTION DETECTED. YOU ARE NOW A ZOMBIE." : "ACCESS GRANTED.");
+                    setUser(data.user);
+                    setTimeout(() => onBack(), 3000);
+                }
+            } catch (err) {
+                setMessage("Server error.");
             }
         } else {
-            if (progressInterval.current) {
-                clearInterval(progressInterval.current);
-                progressInterval.current = null;
-            }
-            setSyncProgress(0);
-        }
-    }, [isHolding, roomStates, assignedColor, assignedStation, isSynced]);
-
-    const handleSyncSuccess = () => {
-        setIsSynced(true);
-        setTerminalVisible(true);
-        setMessage("SYNCHRONIZATION COMPLETE. ACCESS GRANTED.");
-    };
-
-    const handleReset = () => {
-        setFlagInput("");
-        setMessage("");
-        setTerminalVisible(false);
-        setSyncProgress(0);
-        setIsSynced(false);
-        setIsHolding(false);
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setMessage("Checking...");
-        try {
-            const res = await fetch(`${API_BASE_URL}/api/puzzles/submit`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    uniqueId: user.uniqueId, 
-                    puzzleId: 'sector_b', 
-                    answer: flagInput 
-                })
-            });
-            const data = await res.json();
-            if (data.success) {
-                setFound(true);
-                setMessage(data.zombieConverted ? "SYSTEM ERROR: INFECTION DETECTED. YOU ARE NOW A ZOMBIE." : "Flag Accepted.");
-                setUser(data.user);
-                setTimeout(() => onBack(), 2000);
-            } else {
-                setMessage(data.message || "Incorrect flag.");
-            }
-        } catch (err) {
-            setMessage("Server error.");
+            setMessage("INVALID OVERRIDE CODE");
+            setEnteredCode("");
+            setTimeout(() => setMessage(""), 2000);
         }
     };
 
@@ -142,80 +109,98 @@ const SectorB = ({ onBack, user, setUser }) => {
             
             <div className="location-header">
                 <button className="back-btn" onClick={onBack}>[ RETURN TO MAP ]</button>
-                <button className="reset-puzzle-btn" onClick={handleReset}>[ RESET ]</button>
             </div>
 
-            {!terminalVisible && !found && (
-                <div className="sectorb-objective">
-                    <h3>[ MISSION: LOCKDOWN BYPASS ]</h3>
-                    <p>STATION: <span className="highlight-text">{assignedStation?.toUpperCase()}</span></p>
-                    <p>FIND A PARTNER WITH <span className={`color-text color-${assignedColor}`}>{assignedColor?.toUpperCase()}</span> GLOW</p>
-                    <p className="sub-hint">AT THE {assignedStation === 'left' ? 'RIGHT' : 'LEFT'} STATION</p>
-                </div>
-            )}
+            <TypewriterHeader text="Explore the room... the door holds the way to unlocking the secret and the schemes behind all of this..." />
 
-            {!found && !terminalVisible && (
+            {!found && (
                 <>
-                    {/* The Switches */}
-                    <div 
-                        className={`arm-switch left-arm ${assignedStation === 'left' ? 'active-station' : 'disabled-station'} ${isHolding && assignedStation === 'left' ? 'holding' : ''}`}
-                        onMouseDown={() => assignedStation === 'left' && setIsHolding(true)}
-                        onMouseUp={() => setIsHolding(false)}
-                        onMouseLeave={() => setIsHolding(false)}
-                        onTouchStart={(e) => { e.preventDefault(); assignedStation === 'left' && setIsHolding(true); }}
-                        onTouchEnd={(e) => { e.preventDefault(); setIsHolding(false); }}
-                    >
-                        <div className={`glow-bulb bulb-${assignedColor}`}></div>
-                    </div>
+                    {/* The Door Trigger */}
+                    <div className="door-trigger" onClick={() => setShowValvePanel(true)}></div>
 
-                    <div 
-                        className={`arm-switch right-arm ${assignedStation === 'right' ? 'active-station' : 'disabled-station'} ${isHolding && assignedStation === 'right' ? 'holding' : ''}`}
-                        onMouseDown={() => assignedStation === 'right' && setIsHolding(true)}
-                        onMouseUp={() => setIsHolding(false)}
-                        onMouseLeave={() => setIsHolding(false)}
-                        onTouchStart={(e) => { e.preventDefault(); assignedStation === 'right' && setIsHolding(true); }}
-                        onTouchEnd={(e) => { e.preventDefault(); setIsHolding(false); }}
-                    >
-                        <div className={`glow-bulb bulb-${assignedColor}`}></div>
-                    </div>
-
-                    {/* Sync Overlay */}
-                    {syncProgress > 0 && (
-                        <div className="sync-overlay">
-                            <div className="sync-meter-container">
-                                <p>SYNCHRONIZING WITH PARTNER...</p>
-                                <div className="sync-bar">
-                                    <div className="sync-fill" style={{ width: `${syncProgress}%` }}></div>
+                    {showValvePanel && (
+                        <div className="valve-panel-overlay">
+                            <div className="valve-panel">
+                                <h3>MECHANICAL OVERRIDE: {puzzleState.color.toUpperCase()}</h3>
+                                <div className="valve-grid">
+                                    {[0, 1, 2, 3, 4].map(idx => (
+                                        <div 
+                                            key={idx} 
+                                            className={`valve-station ${idx === puzzleState.valveIndex ? 'active-valve' : 'inactive-valve'}`}
+                                        >
+                                            <div 
+                                                className={`valve-handle ${idx === puzzleState.valveIndex && valveProgress > 0 ? 'rotating' : ''} ${isValveDone ? 'done' : ''}`}
+                                                style={{ color: idx === puzzleState.valveIndex ? puzzleState.color : 'transparent' }}
+                                                onMouseDown={idx === puzzleState.valveIndex ? startTurning : null}
+                                                onMouseUp={stopTurning}
+                                                onMouseLeave={stopTurning}
+                                                onTouchStart={idx === puzzleState.valveIndex ? startTurning : null}
+                                                onTouchEnd={stopTurning}
+                                            >
+                                                {isValveDone && idx === puzzleState.valveIndex && <span className="valve-digit">{puzzleState.digit}</span>}
+                                            </div>
+                                            <p>UNIT {idx + 1}</p>
+                                        </div>
+                                    ))}
                                 </div>
-                                <p className="sync-percent">{Math.round(syncProgress)}%</p>
+
+                                {puzzleState.valveIndex !== null && !isValveDone && (
+                                    <div className="valve-progress-container">
+                                        <p>HOLD TO ROTATE UNIT {puzzleState.valveIndex + 1}</p>
+                                        <div className="valve-bar"><div className="valve-fill" style={{ width: `${valveProgress}%` }}></div></div>
+                                    </div>
+                                )}
+
+                                {isValveDone && (
+                                    <div className="valve-success-info">
+                                        <p>UNIT {puzzleState.valveIndex + 1} SYNCHRONIZED. YOUR DIGIT: <span className="big-digit">{puzzleState.digit}</span></p>
+                                        <button className="open-keypad-btn" onClick={() => setShowValvePanel(false)}>PROCEED TO KEYPAD</button>
+                                    </div>
+                                )}
+                                <button className="close-panel" onClick={() => setShowValvePanel(false)}>CLOSE</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Keypad Trigger (Always visible on the door) */}
+                    <div className="keypad-trigger" onClick={() => setShowValvePanel(false)}>
+                         {/* This will open the numpad if valve is done */}
+                    </div>
+
+                    {!showValvePanel && isValveDone && (
+                        <div className="final-keypad-container">
+                            <div className="numpad-container">
+                                <div className="numpad-display">
+                                    {enteredCode.padEnd(5, '_').split('').map((char, i) => (
+                                        <span key={i} className={char !== '_' ? 'typed' : ''}>{char}</span>
+                                    ))}
+                                </div>
+                                <div className="numpad-grid">
+                                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 'CLR', 0, 'OK'].map(val => (
+                                        <button 
+                                            key={val} 
+                                            className={`num-btn ${val === 'OK' ? 'ok-btn' : ''} ${val === 'CLR' ? 'clr-btn' : ''}`} 
+                                            onClick={() => {
+                                                if (val === 'CLR') setEnteredCode("");
+                                                else if (val === 'OK') handleSubmitCode();
+                                                else handleKeypadPress(val);
+                                            }}
+                                        >
+                                            {val}
+                                        </button>
+                                    ))}
+                                </div>
+                                {message && <p className="keypad-message">{message}</p>}
                             </div>
                         </div>
                     )}
                 </>
             )}
 
-            {(terminalVisible || found) && (
-                <div className="puzzle-panel">
-                    <h2>SECTOR B TERMINAL</h2>
-                    {!found ? (
-                        <form onSubmit={handleSubmit} className="puzzle-form">
-                            <p className="success-msg">Industrial containment systems online.</p>
-                            <input 
-                                type="text" 
-                                value={flagInput} 
-                                onChange={(e) => setFlagInput(e.target.value)} 
-                                placeholder="ENTER SECURITY OVERRIDE..." 
-                                required 
-                            />
-                            <button type="submit" className="submit-btn">BYPASS LOCKDOWN</button>
-                        </form>
-                    ) : (
-                        <div className="flag-message success-msg">
-                            <h2>{message}</h2>
-                            <p>Sector B: SECURED</p>
-                        </div>
-                    )}
-                    {message && !found && <div className="flag-message error-msg">{message}</div>}
+            {found && (
+                <div className="puzzle-panel success-panel">
+                    <h2>{message}</h2>
+                    <p>Sector B: SECURED</p>
                 </div>
             )}
         </div>
