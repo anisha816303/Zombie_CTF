@@ -31,6 +31,11 @@ io.on('connection', (socket) => {
       // data: { roomCode, userId, station, color, isHolding }
       io.to(data.roomCode).emit('sector-b-update', data);
     });
+    
+    socket.on('control-room-action', (data) => {
+      // data: { roomCode, freq, amp, phase, harm }
+      socket.to(data.roomCode).emit('control-room-update', data);
+    });
   });
 });
 
