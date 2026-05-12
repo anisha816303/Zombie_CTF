@@ -16,6 +16,12 @@ function App() {
   const [user, setUser] = useState(null);
   const [scene, setScene] = useState("map"); 
   const [roomStatus, setRoomStatus] = useState('waiting');
+  const [visualPersona, setVisualPersona] = useState('person');
+  const [infectionTimer, setInfectionTimer] = useState(null);
+
+  useEffect(() => {
+    if (user && scene === "map") setVisualPersona(user.persona);
+  }, [user?.persona, scene]);
 
   const checkRoomStatus = async (roomCode) => {
     try {
@@ -59,8 +65,28 @@ function App() {
       if (data.userName === user.name) setUser(prev => ({ ...prev, score: data.newScore, persona: data.persona }));
     });
 
+    socket.on('infection-targeted', (data) => {
+      if (data.targetId === user.uniqueId) {
+        setInfectionTimer(60);
+      }
+    });
+
     return () => socket.disconnect();
   }, [user?.uniqueId]);
+
+  useEffect(() => {
+    if (infectionTimer === null) return;
+    if (infectionTimer <= 0) {
+      setInfectionTimer(null);
+      fetch(`${API_BASE_URL}/api/puzzles/timeout-infect`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uniqueId: user.uniqueId })
+      }).catch(() => {});
+      return;
+    }
+    const t = setInterval(() => setInfectionTimer(prev => prev - 1), 1000);
+    return () => clearInterval(t);
+  }, [infectionTimer, user?.uniqueId]);
 
   if (!user) {
     return <Auth onLogin={setUser} />;
@@ -82,13 +108,22 @@ function App() {
   }
 
   // Zombie mode theme injection
-  if (user.persona === 'zombie') {
+  if (visualPersona === 'zombie') {
     document.body.classList.add('zombie-mode');
   } else {
     document.body.classList.remove('zombie-mode');
   }
 
-  return scene === "map"
+  return (
+    <>
+      {infectionTimer !== null && (
+        <div className="global-infection-overlay">
+          <div className="infection-warning">⚠️ BIOHAZARD TARGETED ⚠️</div>
+          <div className="infection-time">{infectionTimer}s</div>
+          <div className="infection-sub">Clear a puzzle before time runs out!</div>
+        </div>
+      )}
+      {scene === "map"
     ? <Map 
         onEnterLab={() => setScene("lab")}
         onEnterSectorB={() => setScene("sector_b")}
@@ -108,7 +143,9 @@ function App() {
           ? <Archives onBack={() => setScene("map")} user={user} setUser={setUser} />
           : scene === "control_room"
             ? <ControlRoom onBack={() => setScene("map")} user={user} setUser={setUser} />
-            : <MedBay onBack={() => setScene("map")} user={user} setUser={setUser} />;
+            : <MedBay onBack={() => setScene("map")} user={user} setUser={setUser} />}
+    </>
+  );
 }
 
 export default App;

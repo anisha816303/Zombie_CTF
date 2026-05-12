@@ -60,14 +60,8 @@ It came from the DIRECTOR's terminal."`;
                     const myIndex = data.users.findIndex(u => u.uniqueId === user.uniqueId);
                     const r = myIndex !== -1 ? myIndex % 3 : 0;
                     setRole(r);
-                    // Pre-fill non-role targets so the single player's wave can actually match
-                    // In a true distributed scenario, they wouldn't see the others moving,
-                    // but they only need to match THEIR parameter to the target wave shape.
-                    // For the math to work locally on their screen, the other two parameters 
-                    // should just be set to the target.
-                    if (r !== 0) setFreq(TARGETS.F);
-                    if (r !== 1) setAmp(TARGETS.A);
-                    if (r !== 2) setPhase(TARGETS.P);
+                    // Non-role targets will stay at their default states (0 or 10/20)
+                    // forcing players to collaborate via communication to match their part.
                 }
             })
             .catch(() => setRole(0));

@@ -273,3 +273,32 @@
     .morse-ref-grid { grid-template-columns: repeat(6, 1fr); }
     .signal-sym.dash { font-size: 1.8rem; }
 }
+
+/* ── Zombie Target Selection ── */
+.zombie-target-panel {
+    background: rgba(40, 0, 0, 0.85);
+    border: 1px solid #ff3333;
+    padding: 30px;
+    border-radius: 4px;
+}
+.human-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 20px;
+}
+.target-btn {
+    background: rgba(20, 0, 0, 0.9);
+    border: 1px solid #ff0000;
+    color: #ffaaaa;
+    padding: 12px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.target-btn:hover {
+    background: #ff0000;
+    color: #fff;
+    box-shadow: 0 0 15px #ff0000;
+}

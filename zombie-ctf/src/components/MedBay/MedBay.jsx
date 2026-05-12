@@ -259,6 +259,7 @@ const MedBay = ({ onBack, user, setUser }) => {
     const [message, setMessage] = useState('');
     const [found, setFound] = useState(false);
     const [wrongCount, setWrongCount] = useState(0);
+    const [humans, setHumans] = useState([]);
     const { playing, start, stop } = useAudioMorse();
 
     const introText = 'INFECTION CONFIRMED — BIOLOGICAL OVERRIDE ACTIVE\n\nYour genome has been rewritten. Sector B is offline.\nThe antidote formula was sealed behind medical authorization.\n\nAn anomalous biosignal has been detected from Station 7-B.\nDecode it.';
@@ -281,9 +282,18 @@ const MedBay = ({ onBack, user, setUser }) => {
             const data = await res.json();
             if (data.success) {
                 setFound(true);
-                setMessage('ANTIDOTE SEQUENCE CONFIRMED. PROTOCOL INITIATED.');
                 setUser(data.user);
-                setTimeout(() => onBack(), 3000);
+                if (data.user.persona === 'zombie') {
+                    setMessage('OVERRIDE COMPLETE. SELECT A TARGET TO INFECT.');
+                    const hRes = await fetch(`${API_BASE_URL}/api/puzzles/humans/${user.roomCode}`);
+                    const hData = await hRes.json();
+                    if (hData.success) {
+                        setHumans(hData.humans);
+                    }
+                } else {
+                    setMessage('ANTIDOTE SEQUENCE CONFIRMED. PROTOCOL INITIATED.');
+                    setTimeout(() => onBack(), 3000);
+                }
             } else {
                 const n = wrongCount + 1;
                 setWrongCount(n);
@@ -350,11 +360,40 @@ const MedBay = ({ onBack, user, setUser }) => {
                     </>
                 )}
 
-                {found && (
+                {found && user.persona !== 'zombie' && (
                     <div className="mb-success">
                         <div className="mb-success-icon">🧬</div>
                         <h2>ANTIDOTE SEQUENCE CONFIRMED</h2>
                         <p>Returning to map...</p>
+                    </div>
+                )}
+
+                {found && user.persona === 'zombie' && (
+                    <div className="mb-success zombie-target-panel">
+                        <div className="mb-success-icon" style={{color: '#f33'}}>☣</div>
+                        <h2>{message}</h2>
+                        <div className="human-list">
+                            {humans.length === 0 ? (
+                                <p>No humans remaining or fetching...</p>
+                            ) : (
+                                humans.map(h => (
+                                    <button
+                                        key={h.uniqueId}
+                                        className="target-btn"
+                                        onClick={async () => {
+                                            setMessage('Infecting ' + h.name + '...');
+                                            await fetch(`${API_BASE_URL}/api/puzzles/target-infect`, {
+                                                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ targetId: h.uniqueId, roomCode: user.roomCode })
+                                            });
+                                            setTimeout(() => onBack(), 1500);
+                                        }}
+                                    >
+                                        [ TARGET: {h.name} ]
+                                    </button>
+                                ))
+                            )}
+                        </div>
                     </div>
                 )}
             </div>

@@ -38,6 +38,10 @@ router.post('/submit', async (req, res) => {
     user.completedPuzzles += 1;
     user.score += 100;
 
+    if (user.infectionPendingUntil) {
+      user.infectionPendingUntil = null;
+    }
+
     let zombieConverted = false;
     const convertedUsers = [];
 
@@ -132,6 +136,59 @@ router.post('/reset', async (req, res) => {
     res.json({ success: true, message: 'Progress reset!', user });
   } catch (error) {
     res.status(500).json({ error: 'Reset failed' });
+  }
+});
+
+router.get('/humans/:roomCode', async (req, res) => {
+  try {
+    const humans = await User.find({ roomCode: req.params.roomCode, isAdmin: false, persona: { $ne: 'zombie' } });
+    res.json({ success: true, humans });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch humans' });
+  }
+});
+
+router.post('/target-infect', async (req, res) => {
+  try {
+    const { targetId, roomCode } = req.body;
+    const target = await User.findOne({ uniqueId: targetId });
+    if (!target) return res.status(404).json({ error: 'Target not found' });
+
+    target.infectionPendingUntil = new Date(Date.now() + 60000); // 60s
+    await target.save();
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(roomCode).emit('infection-targeted', { targetId });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Infection targeting failed' });
+  }
+});
+
+router.post('/timeout-infect', async (req, res) => {
+  try {
+    const { uniqueId } = req.body;
+    const user = await User.findOne({ uniqueId });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    // Allow a bit of leeway with time comparison or just rely on frontend call
+    if (user.persona !== 'zombie' && user.infectionPendingUntil) {
+      user.persona = 'zombie';
+      user.isInfected = true;
+      user.infectionPendingUntil = null;
+      await user.save();
+
+      const io = req.app.get('io');
+      if (io) {
+        io.to(user.roomCode).emit('zombies-converted', { converted: [{ uniqueId: user.uniqueId, name: user.name }] });
+      }
+      return res.json({ success: true, converted: true });
+    }
+    res.json({ success: false });
+  } catch (error) {
+    res.status(500).json({ error: 'Timeout infection failed' });
   }
 });
 

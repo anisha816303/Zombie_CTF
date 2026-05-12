@@ -44,6 +44,14 @@ const SectorB = ({ onBack, user, setUser }) => {
 
     // Dynamic Assignment State
     const [assignment, setAssignment] = useState({ color: 'red', valveIndex: 0, fullCode: "" });
+    const [ledPos, setLedPos] = useState({ top: '45%', left: '82%' });
+
+    useEffect(() => {
+        setLedPos({
+            top: `${10 + Math.random() * 80}%`,
+            left: `${10 + Math.random() * 80}%`
+        });
+    }, []);
 
     const turnInterval = useRef(null);
     const COLORS = ['red', 'green', 'blue', 'orange'];
@@ -150,7 +158,12 @@ const SectorB = ({ onBack, user, setUser }) => {
             {!found && (
                 <>
                     {/* Hidden Trigger — tiny blinking LED light */}
-                    <div className="hidden-led-trigger" onClick={() => setShowValvePanel(true)} title="Diagnostic Port" />
+                    <div 
+                        className="hidden-led-trigger" 
+                        onClick={() => setShowValvePanel(true)} 
+                        title="Diagnostic Port"
+                        style={{ top: ledPos.top, left: ledPos.left }}
+                    />
 
                     {/* ─── Valve Panel ─── */}
                     {showValvePanel && (
