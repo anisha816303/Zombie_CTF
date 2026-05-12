@@ -45,37 +45,17 @@ router.post('/submit', async (req, res) => {
     let zombieConverted = false;
     const convertedUsers = [];
 
-    // If the user reached the threshold, perform room-wide conversion to reach ZOMBIE_TARGET
-    if (user.completedPuzzles >= ZOMBIE_THRESHOLD) {
-      // Count current zombies in the room
+    // Convert the person when they clear the archives puzzle, up to ZOMBIE_TARGET
+    if (puzzleId === 'archive' && user.persona !== 'zombie') {
       const currentZombies = await User.countDocuments({ roomCode: user.roomCode, persona: 'zombie', isAdmin: false });
-      const need = Math.max(0, ZOMBIE_TARGET - currentZombies);
-
-      if (need > 0) {
-        // Find candidate humans in the same room (exclude admins and already-zombies)
-        const candidates = await User.find({ roomCode: user.roomCode, persona: { $ne: 'zombie' }, isAdmin: false });
-
-        // Shuffle candidates
-        for (let i = candidates.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
-        }
-
-        const toConvert = candidates.slice(0, need);
-
-        for (const target of toConvert) {
-          target.persona = 'zombie';
-          target.isInfected = true;
-          await target.save();
-          convertedUsers.push({ uniqueId: target.uniqueId, name: target.name });
-        }
-
-        if (convertedUsers.length > 0) {
-          zombieConverted = true;
-          console.log(`[INFECTION CHECK] Converted ${convertedUsers.length} users in room ${user.roomCode}`);
-        }
+      if (currentZombies < ZOMBIE_TARGET) {
+        user.persona = 'zombie';
+        user.isInfected = true;
+        convertedUsers.push({ uniqueId: user.uniqueId, name: user.name });
+        zombieConverted = true;
+        console.log(`[INFECTION CHECK] Converted user ${user.name} in room ${user.roomCode} upon clearing archives.`);
       } else {
-        console.log(`[INFECTION CHECK] Room ${user.roomCode} already has ${currentZombies} zombies (target ${ZOMBIE_TARGET})`);
+        console.log(`[INFECTION CHECK] Room ${user.roomCode} already has ${currentZombies} zombies (target ${ZOMBIE_TARGET}). Not converting ${user.name}.`);
       }
     }
 
