@@ -11,6 +11,7 @@ import AdminDashboard from "./components/Admin/AdminDashboard";
 
 import API_BASE_URL from "./config";
 import Lobby from "./components/Lobby/Lobby";
+import "./App.css";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -18,6 +19,7 @@ function App() {
   const [roomStatus, setRoomStatus] = useState('waiting');
   const [visualPersona, setVisualPersona] = useState('person');
   const [infectionTimer, setInfectionTimer] = useState(null);
+  const [infectionMessage, setInfectionMessage] = useState(null);
 
   useEffect(() => {
     if (user && scene === "map") setVisualPersona(user.persona);
@@ -55,14 +57,26 @@ function App() {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ uniqueId: user.uniqueId })
         }).then(r => r.json()).then(d => {
-          if (d.success && d.user) setUser(d.user);
+          if (d.success && d.user) {
+            if (user.persona !== 'zombie' && d.user.persona === 'zombie') {
+              setInfectionMessage("You have been infected. Rendezvous at the Lab entrance (Medbay).");
+              setTimeout(() => {
+                setInfectionMessage(null);
+                setScene("med_bay");
+              }, 4000);
+            }
+            setUser(d.user);
+          }
         }).catch(() => {});
       }
     });
 
     socket.on('progress-update', (data) => {
       if (!data) return;
-      if (data.userName === user.name) setUser(prev => ({ ...prev, score: data.newScore, persona: data.persona }));
+      if (data.userName === user.name) {
+        setUser(prev => ({ ...prev, score: data.newScore, persona: data.persona }));
+        setInfectionTimer(null); // Clear timer if they solved a puzzle
+      }
     });
 
     socket.on('infection-targeted', (data) => {
@@ -116,7 +130,13 @@ function App() {
 
   return (
     <>
-      {infectionTimer !== null && (
+      {infectionMessage && (
+        <div className="global-infection-overlay">
+          <div className="infection-warning">☣️ INFECTION COMPLETE ☣️</div>
+          <div className="infection-time" style={{fontSize: '2rem', textAlign: 'center', padding: '0 20px'}}>{infectionMessage}</div>
+        </div>
+      )}
+      {infectionTimer !== null && !infectionMessage && (
         <div className="global-infection-overlay">
           <div className="infection-warning">⚠️ BIOHAZARD TARGETED ⚠️</div>
           <div className="infection-time">{infectionTimer}s</div>

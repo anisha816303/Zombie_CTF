@@ -381,12 +381,12 @@ const MedBay = ({ onBack, user, setUser }) => {
                                         key={h.uniqueId}
                                         className="target-btn"
                                         onClick={async () => {
-                                            setMessage('Infecting ' + h.name + '...');
+                                            setMessage('Infection spread to ' + h.name + '. Meet up at the Lab entrance!');
                                             await fetch(`${API_BASE_URL}/api/puzzles/target-infect`, {
                                                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                                                 body: JSON.stringify({ targetId: h.uniqueId, roomCode: user.roomCode })
                                             });
-                                            setTimeout(() => onBack(), 1500);
+                                            setTimeout(() => onBack(), 3500);
                                         }}
                                     >
                                         [ TARGET: {h.name} ]

@@ -89,16 +89,18 @@ It came from the DIRECTOR's terminal."`;
 
     // Handle slider changes and emit to socket
     const handleSliderChange = (type, val) => {
-        let f = freq, a = amp, p = phase, h = harm;
-        if (type === 'freq') { setFreq(val); f = val; }
-        if (type === 'amp') { setAmp(val); a = val; }
-        if (type === 'phase') { setPhase(val); p = val; }
-        if (type === 'harm') { setHarm(val); h = val; }
+        if (type === 'freq') setFreq(val);
+        if (type === 'amp') setAmp(val);
+        if (type === 'phase') setPhase(val);
+        if (type === 'harm') setHarm(val);
 
         if (socketRef.current) {
-            socketRef.current.emit('control-room-action', {
-                roomCode: user.roomCode, freq: f, amp: a, phase: p, harm: h
-            });
+            const updateData = { roomCode: user.roomCode };
+            if (type === 'freq') updateData.freq = val;
+            if (type === 'amp') updateData.amp = val;
+            if (type === 'phase') updateData.phase = val;
+            if (type === 'harm') updateData.harm = val;
+            socketRef.current.emit('control-room-action', updateData);
         }
     };
 

@@ -158,6 +158,7 @@ router.post('/timeout-infect', async (req, res) => {
       user.persona = 'zombie';
       user.isInfected = true;
       user.infectionPendingUntil = null;
+      user.completedPuzzles = Math.max(user.completedPuzzles, 3);
       await user.save();
 
       const io = req.app.get('io');
