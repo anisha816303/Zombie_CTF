@@ -131,16 +131,16 @@
 }
 
 .key-icon {
-  font-size: 2.5rem;
+  font-size: 1.2rem;
   line-height: 1;
 }
 
 .key-label {
-  font-size: 0.55rem;
+  font-size: 0.45rem;
   color: #ffcc44;
   letter-spacing: 1px;
   background: rgba(0, 0, 0, 0.75);
-  padding: 3px 8px;
+  padding: 2px 5px;
   border-radius: 3px;
   white-space: nowrap;
   text-shadow: 0 0 4px rgba(255, 200, 50, 0.5);

@@ -27,10 +27,26 @@ const SmokeCanvas = ({ keys, onKeyReveal }) => {
   const particlesRef = useRef([]);
   const animRef = useRef(null);
   const revealedRef = useRef(new Set());
+  const pointerRef = useRef({ x: -1000, y: -1000 });
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+
+    const handlePointer = (e) => {
+      if (e.touches && e.touches.length > 0) {
+        pointerRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      } else {
+        pointerRef.current = { x: e.clientX, y: e.clientY };
+      }
+    };
+    
+    // Clear pointer when interaction stops
+    const clearPointer = () => pointerRef.current = { x: -1000, y: -1000 };
+
+    window.addEventListener('mousemove', handlePointer);
+    window.addEventListener('touchmove', handlePointer);
+    window.addEventListener('touchend', clearPointer);
 
     const resize = () => {
       canvas.width = window.innerWidth;
@@ -42,14 +58,14 @@ const SmokeCanvas = ({ keys, onKeyReveal }) => {
     const initParticles = () => {
       const particles = [];
       const w = canvas.width, h = canvas.height;
-      for (let i = 0; i < 80; i++) {
+      for (let i = 0; i < 200; i++) { // thicker smoke
         particles.push({
           x: Math.random() * w,
           y: Math.random() * h,
-          size: 30 + Math.random() * 80,
-          speedX: (Math.random() - 0.5) * 0.6,
-          speedY: -0.2 - Math.random() * 0.4,
-          opacity: 0.08 + Math.random() * 0.18,
+          size: 40 + Math.random() * 100,
+          speedX: (Math.random() - 0.5) * 0.4,
+          speedY: -0.1 - Math.random() * 0.3,
+          opacity: 0.15 + Math.random() * 0.4, // much more opaque
           life: Math.random() * 300,
           maxLife: 300 + Math.random() * 300,
         });
@@ -69,6 +85,16 @@ const SmokeCanvas = ({ keys, onKeyReveal }) => {
         p.y += p.speedY;
         p.life++;
 
+        // Push away from pointer (swipe effect)
+        const dx = p.x - pointerRef.current.x;
+        const dy = p.y - pointerRef.current.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 150) {
+          const pushForce = (150 - dist) / 150;
+          p.x += (dx / dist) * pushForce * 12;
+          p.y += (dy / dist) * pushForce * 12;
+        }
+
         if (p.y < -p.size) p.y = h + p.size;
         if (p.x < -p.size) p.x = w + p.size;
         if (p.x > w + p.size) p.x = -p.size;
@@ -77,30 +103,31 @@ const SmokeCanvas = ({ keys, onKeyReveal }) => {
           p.x = Math.random() * w;
           p.y = h + Math.random() * 60;
           p.life = 0;
-          p.opacity = 0.08 + Math.random() * 0.18;
+          p.opacity = 0.15 + Math.random() * 0.4;
         }
 
         const lifeRatio = p.life / p.maxLife;
         const fade = lifeRatio < 0.15 ? lifeRatio / 0.15 : lifeRatio > 0.75 ? (1 - lifeRatio) / 0.25 : 1;
 
         const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
-        gradient.addColorStop(0, `rgba(60, 180, 60, ${p.opacity * fade * 0.35})`);
-        gradient.addColorStop(0.4, `rgba(30, 90, 30, ${p.opacity * fade * 0.15})`);
+        // Darker, thicker green
+        gradient.addColorStop(0, `rgba(40, 160, 40, ${p.opacity * fade * 0.6})`);
+        gradient.addColorStop(0.5, `rgba(20, 80, 20, ${p.opacity * fade * 0.25})`);
         gradient.addColorStop(1, 'transparent');
         ctx.fillStyle = gradient;
         ctx.fillRect(p.x - p.size, p.y - p.size, p.size * 2, p.size * 2);
+      });
 
-        // Check if smoke reveals any keys
-        keys.forEach((key, idx) => {
-          if (revealedRef.current.has(idx)) return;
-          const kx = (key.x / 100) * w;
-          const ky = (key.y / 100) * h;
-          const dist = Math.sqrt((p.x - kx) ** 2 + (p.y - ky) ** 2);
-          if (dist < p.size * 0.5 && fade > 0.4) {
-            revealedRef.current.add(idx);
-            onKeyReveal(idx);
-          }
-        });
+      // Check if pointer reveals any keys
+      keys.forEach((key, idx) => {
+        if (revealedRef.current.has(idx)) return;
+        const kx = (key.x / 100) * w;
+        const ky = (key.y / 100) * h;
+        const ptrDist = Math.sqrt((pointerRef.current.x - kx) ** 2 + (pointerRef.current.y - ky) ** 2);
+        if (ptrDist < 120) { // reveal when user swipes near it
+          revealedRef.current.add(idx);
+          onKeyReveal(idx);
+        }
       });
 
       animRef.current = requestAnimationFrame(render);
@@ -110,6 +137,9 @@ const SmokeCanvas = ({ keys, onKeyReveal }) => {
     return () => {
       cancelAnimationFrame(animRef.current);
       window.removeEventListener('resize', resize);
+      window.removeEventListener('mousemove', handlePointer);
+      window.removeEventListener('touchmove', handlePointer);
+      window.removeEventListener('touchend', clearPointer);
     };
   }, [keys]);
 
