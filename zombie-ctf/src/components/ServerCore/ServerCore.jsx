@@ -113,7 +113,7 @@ const ServerCore = ({ onBack, user, setUser }) => {
     const targetPerHuman = Math.floor(NUM_NODES / humansCount);
 
     if (myClaims !== targetPerHuman) {
-      setMessage(`ERROR: LOAD UNBALANCED. YOU MUST STABILIZE EXACTLY ${targetPerHuman} NODES.`);
+      setMessage(`LOAD UNBALANCED. STABILIZE EXACTLY ${targetPerHuman} NODES.`);
       setTimeout(() => setMessage(""), 3000);
       return;
     }
@@ -137,7 +137,7 @@ const ServerCore = ({ onBack, user, setUser }) => {
         setUser(data.user);
         setTimeout(() => onBack(), 3000);
       } else {
-        setMessage("SYNC FAILED.");
+        setMessage(data.message || "SYNC FAILED.");
         setTimeout(() => setMessage(""), 3000);
       }
     } catch (err) {
@@ -149,23 +149,39 @@ const ServerCore = ({ onBack, user, setUser }) => {
   const myClaims = nodes.filter(n => n.claimedBy === user.uniqueId).length;
   const targetPerHuman = Math.floor(NUM_NODES / humansCount);
   const totalClaimed = nodes.filter(n => n.claimedBy).length;
+  const tempPercent = Math.min(100, 40 + (20 - totalClaimed) * 3); // Temp rises as fewer nodes stabilized
 
   return (
     <div className="server-core-container">
+      <div className="core-scanlines" />
+
       <div className="location-header">
         <button className="back-btn" onClick={onBack}>[ RETURN TO MAP ]</button>
       </div>
 
       <div className="core-header">
-        <h2>⚠️ CORE MELTDOWN IMMINENT ⚠️</h2>
-        <p>The cooling systems have been rigged. The core temperature is rising rapidly.</p>
-        <p>You must locate the hidden diagnostic nodes and stabilize the grid.</p>
+        <h2>⚠ CORE MELTDOWN IMMINENT ⚠</h2>
+        <p>Locate hidden diagnostic nodes with the torch and stabilize the grid before it overloads.</p>
         <div className="core-stats">
-          <span>ACTIVE OPERATIVES: {humansCount}</span>
-          <span>NODES TO STABILIZE PER OPERATIVE: {targetPerHuman}</span>
+          <span>OPERATIVES: {humansCount}</span>
+          <span>YOUR TARGET: {targetPerHuman} NODES</span>
         </div>
       </div>
 
+      {/* Temperature indicator */}
+      <div className="core-temp-bar">
+        <div className="temp-label">
+          <span>CORE TEMPERATURE</span>
+          <span style={{ color: tempPercent > 70 ? '#ff3333' : '#ffaa00' }}>
+            {tempPercent > 70 ? 'CRITICAL' : 'ELEVATED'}
+          </span>
+        </div>
+        <div className="temp-track">
+          <div className="temp-fill" style={{ width: `${tempPercent}%` }} />
+        </div>
+      </div>
+
+      {/* Search area */}
       <div 
         className="core-interactive-area" 
         ref={coreRef} 
@@ -181,7 +197,7 @@ const ServerCore = ({ onBack, user, setUser }) => {
           style={{
             background: flashlightPos.x < 0
               ? 'rgba(0, 0, 0, 0.95)'
-              : `radial-gradient(circle 90px at ${flashlightPos.x}px ${flashlightPos.y}px, transparent 0%, rgba(0, 0, 0, 0.95) 100%)`
+              : `radial-gradient(circle 100px at ${flashlightPos.x}px ${flashlightPos.y}px, transparent 0%, rgba(0, 0, 0, 0.93) 100%)`
           }}
         />
 
@@ -208,24 +224,44 @@ const ServerCore = ({ onBack, user, setUser }) => {
               onClick={() => handleNodeClick(node.id)}
             >
               <div className="node-inner" />
-              {isClaimed && <span className="node-owner">{node.claimedName}</span>}
+              {isClaimed && <span className="node-owner">{isMine ? 'YOU' : node.claimedName}</span>}
             </div>
           );
         })}
       </div>
 
+      {/* Footer with progress */}
       <div className="core-footer">
-        <div className="core-progress">
-          TOTAL STABILIZED: {totalClaimed} / 20 | YOUR LOAD: {myClaims} / {targetPerHuman}
+        <div className="core-progress-bar">
+          <div className="progress-row">
+            <span className="progress-label">GRID STABILIZED</span>
+            <span className={`progress-value ${totalClaimed >= NUM_NODES ? 'ready' : ''}`}>
+              {totalClaimed} / {NUM_NODES}
+            </span>
+          </div>
+          <div className="progress-track">
+            <div className="progress-fill" style={{ width: `${(totalClaimed / NUM_NODES) * 100}%` }} />
+          </div>
+          <div className="progress-row">
+            <span className="progress-label">YOUR LOAD</span>
+            <span className={`progress-value ${myClaims === targetPerHuman ? 'ready' : myClaims > targetPerHuman ? 'warning' : ''}`}>
+              {myClaims} / {targetPerHuman}
+            </span>
+          </div>
         </div>
+
         <button 
           className="submit-core-btn" 
           onClick={handleSubmit}
           disabled={submitting || totalClaimed < NUM_NODES || myClaims !== targetPerHuman}
         >
-          STABILIZE CORE
+          ⚡ STABILIZE CORE
         </button>
-        {message && <div className="core-message">{message}</div>}
+        {message && (
+          <div className={`core-message ${message.includes('AVERTED') ? 'success' : ''}`}>
+            {message}
+          </div>
+        )}
       </div>
     </div>
   );

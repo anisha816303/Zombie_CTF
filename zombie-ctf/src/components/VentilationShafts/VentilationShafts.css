@@ -1,5 +1,6 @@
 /* ============================================
-   VENTILATION SHAFTS — ZOMBIE COLLABORATIVE PUZZLE
+   VENTILATION SHAFTS — SMOKE + KEYS PUZZLE
+   Mobile-first design
    ============================================ */
 
 /* ─── Base Container ─── */
@@ -8,357 +9,384 @@
   top: 0; left: 0;
   width: 100vw; height: 100vh;
   background: url("/ventilation-bg.png") center/cover no-repeat;
-  background-color: #0a0505;
+  background-color: #080a05;
   color: #ff3333;
   font-family: 'Share Tech Mono', monospace;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding-top: 56px;
+  overflow: hidden;
 }
 
-/* ─── Glitch Overlay ─── */
+/* ─── Glitch Scanlines ─── */
 .glitch-overlay-vent {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
   background:
-    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255, 0, 0, 0.04) 2px, rgba(255, 0, 0, 0.04) 4px),
-    repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(0, 0, 0, 0.03) 3px, rgba(0, 0, 0, 0.03) 6px);
+    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255, 0, 0, 0.03) 2px, rgba(255, 0, 0, 0.03) 4px);
   pointer-events: none;
-  z-index: 10;
+  z-index: 50;
 }
 
-/* ─── Content Wrapper ─── */
+/* ─── Typewriter Intro ─── */
+.vent-typewriter {
+  position: relative;
+  z-index: 15;
+  margin: 60px 12px 0;
+  background: rgba(20, 0, 0, 0.9);
+  border: 1px solid rgba(255, 51, 51, 0.3);
+  border-left: 3px solid #ff3333;
+  padding: 12px 14px;
+  border-radius: 4px;
+  backdrop-filter: blur(8px);
+  transition: opacity 0.8s ease, max-height 0.8s ease;
+  max-height: 250px;
+  overflow: hidden;
+}
+
+.vent-typewriter.hidden {
+  opacity: 0;
+  max-height: 0;
+  padding: 0 14px;
+  margin-top: 60px;
+  margin-bottom: 0;
+  border: none;
+  pointer-events: none;
+}
+
+.vent-tw-text {
+  color: #ff6666;
+  font-size: 0.7rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  margin: 0;
+  font-family: inherit;
+  text-shadow: 0 0 4px rgba(255, 0, 0, 0.3);
+}
+
+.tw-cur {
+  color: #ff3333;
+  animation: blink-cursor 0.6s step-end infinite;
+}
+
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ─── Content Area ─── */
 .ventilation-content {
   flex: 1;
-  width: 95%;
-  max-width: 800px;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  padding: 8px 12px 16px;
   z-index: 5;
-  padding: 20px 0 40px;
+  overflow-y: auto;
+  gap: 10px;
 }
 
-/* ─── Header ─── */
-.vent-header {
-  text-align: center;
-  margin-bottom: 24px;
-  background: rgba(20, 0, 0, 0.85);
-  padding: 20px 24px;
-  border: 1px solid rgba(255, 51, 51, 0.5);
-  border-radius: 4px;
-  box-shadow: 0 0 20px rgba(255, 0, 0, 0.15), inset 0 0 30px rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(8px);
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.vent-header h2 {
-  margin: 0 0 8px;
-  font-size: 1.3rem;
-  text-shadow: 0 0 12px #ff0000;
-  letter-spacing: 3px;
-  color: #ff4444;
-}
-
-.vent-header p {
-  margin: 4px 0;
-  color: #aa6666;
-  font-size: 0.75rem;
-  line-height: 1.5;
-}
-
-/* ─── Role Badge ─── */
-.vent-role-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(255, 0, 0, 0.12);
-  border: 1px solid #ff3333;
-  border-radius: 3px;
-  padding: 8px 16px;
-  margin-top: 12px;
-  font-size: 0.75rem;
-  letter-spacing: 2px;
-  color: #ff6666;
-  text-shadow: 0 0 4px rgba(255, 0, 0, 0.5);
-}
-
-.vent-role-badge .role-valve-num {
-  font-size: 1.2rem;
-  font-weight: 900;
-  color: #fff;
-  text-shadow: 0 0 10px #ff3333;
-}
-
-/* ─── Valves Panel ─── */
-.valves-panel {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-  justify-content: center;
-  width: 100%;
-}
-
-.valve-wrapper {
+/* ─── Smoke Search Area ─── */
+.vent-search-area {
   position: relative;
-  width: 110px;
-  height: 130px;
+  flex: 1;
+  min-height: 280px;
+  background: rgba(0, 5, 0, 0.6);
+  border: 1px solid rgba(0, 255, 0, 0.15);
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.8), 0 0 15px rgba(0, 50, 0, 0.2);
+}
+
+/* Grid pattern */
+.vent-search-area::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background:
+    repeating-linear-gradient(90deg, rgba(0, 255, 0, 0.02) 0px, transparent 1px, transparent 50px),
+    repeating-linear-gradient(0deg, rgba(0, 255, 0, 0.02) 0px, transparent 1px, transparent 50px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.smoke-canvas {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ─── Search Area Label ─── */
+.search-area-label {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  font-size: 0.55rem;
+  color: rgba(0, 255, 0, 0.4);
+  letter-spacing: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.search-pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #00ff50;
+  animation: search-blink 1.5s ease-in-out infinite;
+}
+
+@keyframes search-blink {
+  0%, 100% { opacity: 0.3; box-shadow: none; }
+  50% { opacity: 1; box-shadow: 0 0 6px #00ff50; }
+}
+
+/* ─── Keys ─── */
+.vent-key {
+  position: absolute;
+  z-index: 3;
+  transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-}
-
-/* ─── Target Ring (dashed guide) ─── */
-.valve-target-indicator {
-  position: absolute;
-  top: 0; left: 50%;
-  transform: translateX(-50%);
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  border: 2px dashed rgba(255, 0, 0, 0.25);
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.8s ease, transform 0.3s;
   pointer-events: none;
 }
 
-.valve-target-indicator::after {
-  content: '';
-  position: absolute;
-  top: -6px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 12px;
-  height: 12px;
-  background: rgba(255, 100, 50, 0.6);
-  border-radius: 50%;
-  box-shadow: 0 0 8px rgba(255, 100, 50, 0.4);
+.vent-key.revealed {
+  opacity: 1;
+  pointer-events: auto;
+  animation: key-appear 0.6s ease-out;
 }
 
-/* ─── Valve (uses valve_clean.png like SectorB) ─── */
-.valve {
-  width: 90px;
-  height: 90px;
-  margin: 5px auto 0;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: transform 0.3s ease-out;
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.vent-key.collected {
+  opacity: 0.3;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0.6);
 }
 
-.valve-img-wrap {
-  width: 100%;
-  height: 100%;
-  background: url("/valve_clean.png") center/contain no-repeat;
-  mix-blend-mode: screen;
-  filter: brightness(0.5) contrast(1.2) hue-rotate(0deg);
-  transition: filter 0.3s;
-}
-
-.valve-wrapper.is-mine .valve-img-wrap {
-  filter: brightness(1.1) contrast(1.2) drop-shadow(0 0 10px #ff3333);
-}
-
-.valve-wrapper.is-mine .valve {
+.vent-key.mine.revealed:not(.collected) {
   cursor: pointer;
 }
 
-.valve-wrapper.is-locked .valve {
-  cursor: not-allowed;
-  opacity: 0.5;
+.vent-key.mine.revealed:not(.collected) .key-icon {
+  animation: key-glow 1.5s ease-in-out infinite;
 }
 
-.valve-wrapper.is-locked .valve-img-wrap {
-  filter: brightness(0.25) grayscale(0.8);
+@keyframes key-appear {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3) rotate(-45deg); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0); }
 }
 
-.valve-wrapper.is-aligned .valve-img-wrap {
-  filter: brightness(1.3) drop-shadow(0 0 15px #00ff50) hue-rotate(90deg);
+@keyframes key-glow {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(255, 200, 50, 0.6)); }
+  50% { filter: drop-shadow(0 0 14px rgba(255, 200, 50, 1)); }
 }
 
-/* ─── Valve Label ─── */
-.valve-label {
-  margin-top: 6px;
-  font-size: 0.65rem;
-  letter-spacing: 2px;
-  color: #555;
+.key-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.key-label {
+  font-size: 0.5rem;
+  color: #ffcc44;
+  letter-spacing: 1px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 2px 6px;
+  border-radius: 2px;
+  white-space: nowrap;
+  text-shadow: 0 0 4px rgba(255, 200, 50, 0.5);
+}
+
+.vent-key:not(.mine) .key-label {
+  color: #888;
+}
+
+/* ─── Lock Panel ─── */
+.vent-lock-panel {
+  background: rgba(20, 0, 0, 0.85);
+  border: 1px solid rgba(255, 51, 51, 0.3);
+  border-radius: 6px;
+  padding: 12px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 0 15px rgba(255, 0, 0, 0.08);
+}
+
+.lock-panel-title {
   text-align: center;
+  font-size: 0.65rem;
+  letter-spacing: 3px;
+  color: #aa4444;
+  margin-bottom: 10px;
+  text-shadow: 0 0 4px rgba(255, 0, 0, 0.3);
 }
 
-.valve-wrapper.is-mine .valve-label {
+.lock-grid {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.lock-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 10px 12px;
+  min-width: 60px;
+  transition: all 0.3s;
+}
+
+.lock-item.mine {
+  border-color: #ff3333;
+  box-shadow: 0 0 8px rgba(255, 0, 0, 0.15);
+}
+
+.lock-item.mine.ready {
+  border-color: #ffaa00;
+  box-shadow: 0 0 12px rgba(255, 170, 0, 0.2);
+  cursor: pointer;
+  animation: lock-ready-pulse 1.5s ease-in-out infinite;
+}
+
+.lock-item.unlocked {
+  border-color: #00ff50;
+  box-shadow: 0 0 12px rgba(0, 255, 80, 0.2);
+  background: rgba(0, 20, 0, 0.5);
+}
+
+@keyframes lock-ready-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(255, 170, 0, 0.2); }
+  50% { box-shadow: 0 0 18px rgba(255, 170, 0, 0.4); }
+}
+
+.lock-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  transition: transform 0.3s;
+}
+
+.lock-item.unlocked .lock-icon {
+  transform: rotate(-15deg);
+}
+
+.lock-item:active.ready .lock-icon {
+  transform: scale(1.2);
+}
+
+.lock-name {
+  font-size: 0.55rem;
+  color: #888;
+  letter-spacing: 1px;
+}
+
+.lock-item.mine .lock-name {
   color: #ff6666;
-  text-shadow: 0 0 4px rgba(255, 0, 0, 0.4);
+  font-weight: bold;
 }
 
-.valve-wrapper.is-aligned .valve-label {
+.lock-item.unlocked .lock-name {
+  color: #00ff50;
+}
+
+.lock-status {
+  font-size: 0.5rem;
+  letter-spacing: 1px;
+  color: #555;
+}
+
+.lock-status.tap {
+  color: #ffaa00;
+  animation: hint-pulse 1.5s ease-in-out infinite;
+}
+
+.lock-status.done {
   color: #00ff50;
   text-shadow: 0 0 4px rgba(0, 255, 0, 0.4);
 }
 
-.valve-owner-tag {
-  font-size: 0.55rem;
-  color: #aa4444;
-  margin-top: 2px;
-  opacity: 0.7;
-}
-
-/* ─── Sync Status Bar ─── */
-.vent-sync-bar {
-  width: 100%;
-  background: rgba(0, 0, 0, 0.7);
-  border: 1px solid #333;
-  border-radius: 3px;
-  padding: 12px 16px;
-  margin-bottom: 20px;
-  box-sizing: border-box;
+.lock-progress {
   text-align: center;
-  backdrop-filter: blur(6px);
-}
-
-.vent-sync-label {
-  font-size: 0.7rem;
+  margin-top: 10px;
+  font-size: 0.6rem;
   letter-spacing: 2px;
-  color: #888;
-  margin-bottom: 8px;
-}
-
-.vent-sync-dots {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-}
-
-.sync-dot {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  border: 2px solid #444;
-  background: #1a0000;
-  transition: all 0.3s;
-}
-
-.sync-dot.aligned {
-  background: #00ff50;
-  border-color: #00ff50;
-  box-shadow: 0 0 10px #00ff50;
-}
-
-.sync-dot.mine {
-  border-color: #ff3333;
-  box-shadow: 0 0 6px rgba(255, 0, 0, 0.3);
-}
-
-.sync-dot.mine.aligned {
-  border-color: #00ff50;
+  color: #666;
 }
 
 /* ─── Footer ─── */
 .vent-footer {
-  text-align: center;
-  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
 }
 
 .submit-vent-btn {
+  width: 100%;
   background: rgba(40, 0, 0, 0.8);
   color: #ff3333;
-  border: 2px solid #ff3333;
-  padding: 14px 36px;
-  font-size: 1.2rem;
+  border: 2px solid rgba(255, 51, 51, 0.4);
+  padding: 14px 20px;
+  font-size: 1rem;
   font-family: inherit;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s;
-  box-shadow: 0 0 10px rgba(255, 0, 0, 0.2);
   letter-spacing: 3px;
+  border-radius: 4px;
   backdrop-filter: blur(6px);
+  text-shadow: 0 0 6px rgba(255, 0, 0, 0.4);
 }
 
-.submit-vent-btn:hover:not(:disabled) {
-  background: #ff3333;
-  color: #fff;
-  box-shadow: 0 0 25px rgba(255, 0, 0, 0.6);
+.submit-vent-btn:active:not(:disabled) {
+  background: rgba(255, 51, 51, 0.25);
+  box-shadow: 0 0 25px rgba(255, 0, 0, 0.4);
+  transform: scale(0.98);
 }
 
 .submit-vent-btn:disabled {
-  border-color: #444;
   color: #444;
+  border-color: #333;
   background: rgba(0, 0, 0, 0.5);
   cursor: not-allowed;
-  box-shadow: none;
+  text-shadow: none;
 }
 
 .vent-message {
-  margin-top: 16px;
-  font-size: 0.9rem;
-  font-weight: bold;
-  text-shadow: 0 0 5px #ff0000;
-  min-height: 20px;
+  font-size: 0.75rem;
   color: #ff6666;
+  text-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
+  text-align: center;
+  letter-spacing: 1px;
+  min-height: 18px;
 }
 
-/* ─── Success / Voting Panel ─── */
+/* ─── Success Panel ─── */
 .vent-success-panel {
-  background: rgba(20, 0, 0, 0.9);
-  border: 1px solid #ff3333;
-  padding: 30px;
+  background: rgba(20, 0, 0, 0.9) !important;
+  border: 1px solid #ff3333 !important;
+  padding: 24px !important;
   width: 100%;
   box-sizing: border-box;
-  box-shadow: 0 0 30px rgba(255, 0, 0, 0.3);
-  border-radius: 4px;
+  box-shadow: 0 0 30px rgba(255, 0, 0, 0.2);
+  border-radius: 6px;
   backdrop-filter: blur(10px);
 }
 
-/* ─── Instruction Hint ─── */
-.vent-collab-hint {
-  background: rgba(255, 0, 0, 0.08);
-  border: 1px dashed rgba(255, 51, 51, 0.3);
-  border-radius: 3px;
-  padding: 10px 14px;
-  margin-bottom: 16px;
-  text-align: center;
-  font-size: 0.65rem;
-  color: #aa6666;
-  letter-spacing: 1px;
-  line-height: 1.6;
-}
-
-.vent-collab-hint strong {
-  color: #ff6666;
-}
-
-/* ─── Mobile Responsive ─── */
-@media (max-width: 600px) {
-  .valves-panel {
-    gap: 10px;
-  }
-
-  .valve-wrapper {
-    width: 80px;
-    height: 105px;
-  }
-
-  .valve {
-    width: 68px;
-    height: 68px;
-  }
-
-  .valve-target-indicator {
-    width: 78px;
-    height: 78px;
-  }
-
-  .vent-header h2 {
-    font-size: 1rem;
-  }
-
-  .submit-vent-btn {
-    font-size: 1rem;
-    padding: 12px 24px;
-  }
+/* ─── Animations ─── */
+@keyframes hint-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
 }
