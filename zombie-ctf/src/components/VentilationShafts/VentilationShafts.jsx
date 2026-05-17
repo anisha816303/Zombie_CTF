@@ -85,16 +85,6 @@ const SmokeCanvas = ({ keys, onKeyReveal }) => {
         p.y += p.speedY;
         p.life++;
 
-        // Push away from pointer (swipe effect)
-        const dx = p.x - pointerRef.current.x;
-        const dy = p.y - pointerRef.current.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 150) {
-          const pushForce = (150 - dist) / 150;
-          p.x += (dx / dist) * pushForce * 12;
-          p.y += (dy / dist) * pushForce * 12;
-        }
-
         if (p.y < -p.size) p.y = h + p.size;
         if (p.x < -p.size) p.x = w + p.size;
         if (p.x > w + p.size) p.x = -p.size;
@@ -111,12 +101,27 @@ const SmokeCanvas = ({ keys, onKeyReveal }) => {
 
         const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
         // Darker, thicker green
-        gradient.addColorStop(0, `rgba(40, 160, 40, ${p.opacity * fade * 0.6})`);
-        gradient.addColorStop(0.5, `rgba(20, 80, 20, ${p.opacity * fade * 0.25})`);
+        gradient.addColorStop(0, `rgba(40, 160, 40, ${p.opacity * fade * 0.8})`);
+        gradient.addColorStop(0.5, `rgba(20, 80, 20, ${p.opacity * fade * 0.4})`);
         gradient.addColorStop(1, 'transparent');
         ctx.fillStyle = gradient;
         ctx.fillRect(p.x - p.size, p.y - p.size, p.size * 2, p.size * 2);
       });
+
+      // Erase smoke around pointer (Torch effect)
+      if (pointerRef.current.x !== -1000) {
+        ctx.globalCompositeOperation = 'destination-out';
+        const rx = pointerRef.current.x;
+        const ry = pointerRef.current.y;
+        const maskSize = 120; // Radius of the torch
+        const maskGrad = ctx.createRadialGradient(rx, ry, 0, rx, ry, maskSize);
+        maskGrad.addColorStop(0, 'rgba(0, 0, 0, 1)');
+        maskGrad.addColorStop(0.4, 'rgba(0, 0, 0, 0.8)');
+        maskGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = maskGrad;
+        ctx.fillRect(rx - maskSize, ry - maskSize, maskSize * 2, maskSize * 2);
+        ctx.globalCompositeOperation = 'source-over'; // restore default
+      }
 
       // Check if pointer reveals any keys
       keys.forEach((key, idx) => {
@@ -159,6 +164,7 @@ const VentilationShafts = ({ onBack, user, setUser }) => {
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [humans, setHumans] = useState([]);
+  const [keyMessage, setKeyMessage] = useState("");
 
   // Phase tracking: 'search' → 'unlock' → 'execute'
   const myKeyCollected = collectedKeys.has(myLockIndex);
@@ -264,17 +270,23 @@ const VentilationShafts = ({ onBack, user, setUser }) => {
     setRevealedKeys(prev => new Set([...prev, keyIdx]));
   }, []);
 
-  const handleCollectKey = (keyIdx) => {
-    if (keyIdx !== myLockIndex) return;
+  const handleKeyTap = (keyIdx) => {
     if (collectedKeys.has(keyIdx)) return;
-
-    const newCollected = new Set([...collectedKeys, keyIdx]);
-    setCollectedKeys(newCollected);
-    socketRef.current?.emit('ventilation-action', {
-      roomCode: user.roomCode,
-      collectedKeys: [...newCollected],
-      unlockedLocks: [...unlockedLocks],
-    });
+    
+    if (keyIdx === myLockIndex) {
+      setKeyMessage("YOU FOUND YOUR KEY!");
+      const newCollected = new Set([...collectedKeys, keyIdx]);
+      setCollectedKeys(newCollected);
+      socketRef.current?.emit('ventilation-action', {
+        roomCode: user.roomCode,
+        collectedKeys: [...newCollected],
+        unlockedLocks: [...unlockedLocks],
+      });
+      setTimeout(() => setKeyMessage(""), 3000);
+    } else {
+      setKeyMessage(`THAT IS ${zombieNames[keyIdx] || `KEY ${keyIdx + 1}`}'S KEY.`);
+      setTimeout(() => setKeyMessage(""), 2000);
+    }
   };
 
   const handleUnlockLock = (lockIdx) => {
@@ -363,18 +375,14 @@ const VentilationShafts = ({ onBack, user, setUser }) => {
       {!found && keys.map((key, idx) => {
         const isRevealed = revealedKeys.has(idx);
         const isCollected = collectedKeys.has(idx);
-        const isMine = idx === myLockIndex;
         return (
           <div
             key={key.id}
-            className={`vent-key ${isRevealed ? 'revealed' : ''} ${isCollected ? 'collected' : ''} ${isMine ? 'mine' : ''}`}
+            className={`vent-key ${isRevealed ? 'revealed' : ''} ${isCollected ? 'collected' : ''}`}
             style={{ left: `${key.x}%`, top: `${key.y}%` }}
-            onClick={() => isRevealed && !isCollected && isMine && handleCollectKey(idx)}
+            onClick={() => isRevealed && !isCollected && handleKeyTap(idx)}
           >
             <div className="key-icon">🔑</div>
-            <div className="key-label">
-              {isMine ? 'YOUR KEY' : (zombieNames[idx] || `KEY ${idx + 1}`)}
-            </div>
           </div>
         );
       })}
@@ -388,29 +396,37 @@ const VentilationShafts = ({ onBack, user, setUser }) => {
         <pre className="vent-tw-text">{displayed}{!twDone && <span className="tw-cur">█</span>}</pre>
       </div>
 
-      {/* Phase indicator — subtle hint at bottom */}
+      {/* Phase indicator / Key Message */}
       {!found && (
         <div className="vent-phase-hint">
-          {phase === 'search' && (
-            <div className="phase-text">
-              <span className="search-pulse" />
-              SEARCHING FOR YOUR KEY IN THE SMOKE...
+          {keyMessage ? (
+            <div className="phase-text phase-message">
+              {keyMessage}
             </div>
-          )}
-          {phase === 'unlock' && !myLockUnlocked && (
-            <div className="phase-text phase-unlock">
-              🔑 KEY COLLECTED — UNLOCK YOUR SEAL BELOW
-            </div>
-          )}
-          {phase === 'execute' && !allUnlocked && (
-            <div className="phase-text phase-wait">
-              🔓 YOUR SEAL IS OPEN — WAITING FOR OTHERS ({unlockedLocks.size}/{zombieCount})
-            </div>
-          )}
-          {phase === 'execute' && allUnlocked && (
-            <div className="phase-text phase-ready">
-              ⚡ ALL SEALS OPEN — EXECUTE OVERRIDE
-            </div>
+          ) : (
+            <>
+              {phase === 'search' && (
+                <div className="phase-text">
+                  <span className="search-pulse" />
+                  SWIPE SMOKE TO FIND YOUR KEY...
+                </div>
+              )}
+              {phase === 'unlock' && !myLockUnlocked && (
+                <div className="phase-text phase-unlock">
+                  🔑 KEY COLLECTED — UNLOCK YOUR SEAL BELOW
+                </div>
+              )}
+              {phase === 'execute' && !allUnlocked && (
+                <div className="phase-text phase-wait">
+                  🔓 YOUR SEAL IS OPEN — WAITING FOR OTHERS ({unlockedLocks.size}/{zombieCount})
+                </div>
+              )}
+              {phase === 'execute' && allUnlocked && (
+                <div className="phase-text phase-ready">
+                  ⚡ ALL SEALS OPEN — EXECUTE OVERRIDE
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
