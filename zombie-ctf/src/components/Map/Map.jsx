@@ -328,7 +328,7 @@ const Map = ({ onEnterLab, onEnterSectorB, onEnterMedBay, onEnterArchive, onEnte
             if (node.id === "med_bay") {
               if (user?.completedPuzzles >= 3 && user?.persona === "zombie") {
                 isLocked = false;
-                currentStatus = "INFECTED";
+                currentStatus = user?.completedPuzzles >= 4 ? "CLEARED" : "INFECTED";
               }
             }
 

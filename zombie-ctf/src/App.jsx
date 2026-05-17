@@ -62,10 +62,10 @@ function App() {
         }).then(r => r.json()).then(d => {
           if (d.success && d.user) {
             if (user.persona !== 'zombie' && d.user.persona === 'zombie') {
-              setInfectionMessage("You have been infected. Rendezvous at the Lab entrance (Medbay).");
+              setInfectionMessage("You have been infected. Rendezvous with the horde.");
               setTimeout(() => {
                 setInfectionMessage(null);
-                setScene("med_bay");
+                setScene("map");
               }, 4000);
             }
             setUser(d.user);

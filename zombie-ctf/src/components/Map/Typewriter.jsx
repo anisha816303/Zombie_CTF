@@ -34,8 +34,34 @@ const getLines = (user) => {
     ];
   }
   
+  // After 4th puzzle: show ventilation for zombies, server core for humans
+  if (user && user.completedPuzzles >= 4) {
+    if (user.persona === 'zombie') {
+      return [
+        { text: "The horde has spoken.", delay: 80, pauseAfter: 600, className: "tw-highlight" },
+        { text: "Another operative has fallen.", delay: 55, pauseAfter: 500 },
+        { text: "...", delay: 200, pauseAfter: 400 },
+        { text: "The virus must spread beyond these walls.", delay: 60, pauseAfter: 800, className: "tw-error" },
+        { text: "Proceed to the environmental controls.", delay: 60, pauseAfter: 600 },
+        { text: "", delay: 0, pauseAfter: 300 },
+        { text: ">> VENTILATION SHAFTS ACCESSIBLE", delay: 60, pauseAfter: 0, className: "tw-access", isLast: true },
+      ];
+    } else {
+      return [
+        { text: "Communication established.", delay: 80, pauseAfter: 400 },
+        { text: "But the facility is failing.", delay: 55, pauseAfter: 600, className: "tw-warning" },
+        { text: "...", delay: 200, pauseAfter: 400 },
+        { text: "The Director rigged the cooling systems to overload.", delay: 55, pauseAfter: 500 },
+        { text: "A catastrophic meltdown is imminent.", delay: 60, pauseAfter: 800, className: "tw-error" },
+        { text: "Reroute power and stabilize the core temperature.", delay: 60, pauseAfter: 600 },
+        { text: "", delay: 0, pauseAfter: 300 },
+        { text: ">> SERVER CORE UNLOCKED", delay: 60, pauseAfter: 0, className: "tw-access", isLast: true },
+      ];
+    }
+  }
+  
   // After 3rd puzzle: show med bay for zombies, comms for humans
-  if (user && user.completedPuzzles >= 3 && user.persona === 'zombie') {
+  if (user && user.completedPuzzles === 3 && user.persona === 'zombie') {
     return [
       { text: "WARNING: INFECTION DETECTED.", delay: 80, pauseAfter: 600, className: "tw-error" },
       { text: "...", delay: 200, pauseAfter: 400 },

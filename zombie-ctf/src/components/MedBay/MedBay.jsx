@@ -234,7 +234,7 @@ const MorseRef = () => {
 const MedBay = ({ onBack, user, setUser }) => {
     const [flagInput, setFlagInput] = useState('');
     const [message, setMessage] = useState('');
-    const [found, setFound] = useState(false);
+    const [found, setFound] = useState(user?.completedPuzzles >= 4);
     const [wrongCount, setWrongCount] = useState(0);
     const [humans, setHumans] = useState([]);
     const { playing, start, stop } = useAudioMorse();
@@ -439,7 +439,7 @@ const MedBay = ({ onBack, user, setUser }) => {
                                 <div className="vote-finalized-name">{voteStatus.targetName}</div>
                                 <p className="vote-finalized-sub">
                                     The horde has spoken. Infection deployed.
-                                    <br />Rendezvous at the Laboratory entrance.
+                                    <br />Rendezvous at the Ventilation Shafts.
                                 </p>
                                 <button className="vote-return-btn" onClick={onBack}>[ RETURN TO MAP ]</button>
                             </div>
@@ -450,7 +450,7 @@ const MedBay = ({ onBack, user, setUser }) => {
                                     <div className="vote-collab-icon">🧟‍♂️</div>
                                     <h2>HORDE COUNCIL</h2>
                                     <p>
-                                        Meet at the <strong>Laboratory entrance</strong> with your fellow infected.
+                                        Meet at the <strong>Med Bay entrance</strong> with your fellow infected.
                                         <br />Vote together — the target with the most votes will be infected.
                                     </p>
                                 </div>
