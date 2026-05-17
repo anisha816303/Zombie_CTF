@@ -183,6 +183,7 @@
   }
 }
 
+/* ── Full-screen overlay (only for INFECTION COMPLETE message) ── */
 .global-infection-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -211,13 +212,60 @@
   text-shadow: 0 0 20px #ff0000;
 }
 
-.global-infection-overlay .infection-sub {
-  font-size: 1.2rem;
-  margin-top: 20px;
-  color: #ffaa99;
-}
-
 @keyframes pulse-bg {
   0% { background: rgba(40, 0, 0, 0.85); }
   100% { background: rgba(80, 0, 0, 0.95); }
+}
+
+/* ── Compact bottom-right infection timer widget ── */
+.infection-timer-widget {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+  background: rgba(30, 0, 0, 0.92);
+  border: 2px solid #ff3333;
+  border-radius: 8px;
+  padding: 12px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: #ff3333;
+  box-shadow: 0 0 20px rgba(255, 0, 0, 0.4), 0 0 60px rgba(255, 0, 0, 0.15);
+  animation: widget-pulse 1.5s infinite alternate;
+  pointer-events: none;
+  min-width: 140px;
+  backdrop-filter: blur(8px);
+}
+
+.infection-timer-widget .itw-icon {
+  font-size: 1.1rem;
+  letter-spacing: 2px;
+  animation: blink-warn 0.8s step-end infinite;
+}
+
+.infection-timer-widget .itw-time {
+  font-size: 2.8rem;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 0 12px #ff0000;
+  line-height: 1;
+}
+
+.infection-timer-widget .itw-label {
+  font-size: 0.6rem;
+  letter-spacing: 2px;
+  color: #ffaa88;
+  text-transform: uppercase;
+}
+
+@keyframes widget-pulse {
+  0%   { box-shadow: 0 0 12px rgba(255, 0, 0, 0.3), 0 0 40px rgba(255, 0, 0, 0.1); border-color: #ff3333; }
+  100% { box-shadow: 0 0 24px rgba(255, 0, 0, 0.6), 0 0 80px rgba(255, 0, 0, 0.25); border-color: #ff5555; }
+}
+
+@keyframes blink-warn {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
 }

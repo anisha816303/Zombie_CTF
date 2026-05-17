@@ -137,10 +137,10 @@ function App() {
         </div>
       )}
       {infectionTimer !== null && !infectionMessage && (
-        <div className="global-infection-overlay">
-          <div className="infection-warning">⚠️ BIOHAZARD TARGETED ⚠️</div>
-          <div className="infection-time">{infectionTimer}s</div>
-          <div className="infection-sub">Clear a puzzle before time runs out!</div>
+        <div className="infection-timer-widget">
+          <div className="itw-icon">⚠️ BIOHAZARD ⚠️</div>
+          <div className="itw-time">{infectionTimer}s</div>
+          <div className="itw-label">Clear a puzzle!</div>
         </div>
       )}
       {scene === "map"

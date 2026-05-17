@@ -10,7 +10,8 @@ const userSchema = new mongoose.Schema({
   score: { type: Number, default: 0 },
   isInfected: { type: Boolean, default: false },
   currentLocation: { type: String, default: 'map' },
-  infectionPendingUntil: { type: Date, default: null }
+  infectionPendingUntil: { type: Date, default: null },
+  latentInfected: { type: Boolean, default: false }
 });
 
 module.exports = mongoose.model('User', userSchema);

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
+import { io } from 'socket.io-client';
 import "./MedBay.css";
 import API_BASE_URL from "../../config";
 
@@ -135,22 +136,17 @@ const ECGMonitor = ({ playing, cycleDuration }) => {
         const W = canvas.width, H = canvas.height;
         const mid = H / 2;
 
-        // Pre-compute x-position → on/off lookup
-        // Canvas scrolls at 1px per frame (~60fps) → 1px ≈ 16.7ms
         const PX_MS = 16.7;
-
-        let x = 0; // global pixel counter
+        let x = 0;
         let prevY = mid;
 
         const getY = (ms) => {
-            // find segment
             let elapsed = ms % totalMs;
             for (const seg of timeline) {
                 if (elapsed < seg.dur) {
                     if (!seg.on) return mid;
-                    // spike: triangle shape
                     const half = seg.dur / 2;
-                    const peakH = seg.dur > 150 ? 22 : 12; // dash taller than dot
+                    const peakH = seg.dur > 150 ? 22 : 12;
                     if (elapsed < half) return mid - (peakH * elapsed / half);
                     return mid - (peakH * (seg.dur - elapsed) / half);
                 }
@@ -163,13 +159,11 @@ const ECGMonitor = ({ playing, cycleDuration }) => {
         ctx.fillRect(0, 0, W, H);
 
         const draw = () => {
-            // Scroll left
             const img = ctx.getImageData(1, 0, W - 1, H);
             ctx.putImageData(img, 0, 0);
             ctx.fillStyle = '#060808';
             ctx.fillRect(W - 2, 0, 2, H);
 
-            // Grid
             if (x % 16 === 0) {
                 ctx.fillStyle = 'rgba(255,20,20,0.05)';
                 ctx.fillRect(W - 2, 0, 1, H);
@@ -214,23 +208,6 @@ const ECGMonitor = ({ playing, cycleDuration }) => {
     );
 };
 
-// ─── Signal Display ───────────────────────────────────────────────
-// const SignalDisplay = () => (
-//     <div className="signal-display">
-//         <div className="signal-label">RAW BIOSIGNAL — DECODED OUTPUT:</div>
-//         <div className="signal-groups">
-//             {SIGNAL_GROUPS.map((g, i) => (
-//                 <div key={i} className="signal-group">
-//                     {g.code.map((sym, j) => (
-//                         <span key={j} className={`signal-sym ${sym === '·' ? 'dot' : 'dash'}`}>{sym}</span>
-//                     ))}
-//                 </div>
-//             ))}
-//         </div>
-//         <div className="signal-note">Signal repeating. Pattern origin: unknown.</div>
-//     </div>
-// );
-
 // ─── Morse Reference ─────────────────────────────────────────────
 const MorseRef = () => {
     const [open, setOpen] = useState(false);
@@ -262,11 +239,58 @@ const MedBay = ({ onBack, user, setUser }) => {
     const [humans, setHumans] = useState([]);
     const { playing, start, stop } = useAudioMorse();
 
+    // ── Voting state ──
+    const [myVote, setMyVote] = useState(null);
+    const [voteStatus, setVoteStatus] = useState(null);
+    const [voteSubmitting, setVoteSubmitting] = useState(false);
+    const socketRef = useRef(null);
+
     const introText = 'INFECTION CONFIRMED — BIOLOGICAL OVERRIDE ACTIVE\n\nYour genome has been rewritten. Sector B is offline.\nThe antidote formula was sealed behind medical authorization.\n\nAn anomalous biosignal has been detected from Station 7-B.\nDecode it.';
     const { displayed, done: twDone, hidden: twHidden } = useTypewriter(introText, 22);
 
+    // ── Socket listener for real-time vote updates ──
+    useEffect(() => {
+        if (!user) return;
+        const socket = io(API_BASE_URL);
+        socketRef.current = socket;
+        socket.on('connect', () => socket.emit('join-room', user.roomCode));
+
+        socket.on('zombie-vote-update', (data) => {
+            setVoteStatus(prev => ({
+                ...prev,
+                votesCount: data.votes.length,
+                totalZombies: data.totalZombies,
+                finalized: data.finalized,
+                targetName: data.targetName,
+                targetId: data.targetId
+            }));
+        });
+
+        return () => socket.disconnect();
+    }, [user?.uniqueId]);
+
+    // ── Fetch vote status when zombie clears puzzle ──
+    useEffect(() => {
+        if (found && user?.persona === 'zombie') {
+            fetchVoteStatus();
+        }
+    }, [found, user?.persona]);
+
+    const fetchVoteStatus = async () => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/puzzles/zombie-vote-status/${user.roomCode}`);
+            const data = await res.json();
+            if (data.success) {
+                setVoteStatus(data);
+            }
+        } catch (e) {
+            console.error('Failed to fetch vote status', e);
+        }
+    };
+
     const handleReset = () => {
         setFlagInput(''); setMessage(''); setFound(false); setWrongCount(0);
+        setMyVote(null); setVoteStatus(null);
     };
 
     const handleSubmit = async (e) => {
@@ -284,12 +308,13 @@ const MedBay = ({ onBack, user, setUser }) => {
                 setFound(true);
                 setUser(data.user);
                 if (data.user.persona === 'zombie') {
-                    setMessage('OVERRIDE COMPLETE. SELECT A TARGET TO INFECT.');
+                    setMessage('OVERRIDE COMPLETE. Collaborate with your horde to select a target.');
                     const hRes = await fetch(`${API_BASE_URL}/api/puzzles/humans/${user.roomCode}`);
                     const hData = await hRes.json();
                     if (hData.success) {
                         setHumans(hData.humans);
                     }
+                    fetchVoteStatus();
                 } else {
                     setMessage('ANTIDOTE SEQUENCE CONFIRMED. PROTOCOL INITIATED.');
                     setTimeout(() => onBack(), 3000);
@@ -303,6 +328,42 @@ const MedBay = ({ onBack, user, setUser }) => {
             }
         } catch { setMessage('SERVER ERROR.'); }
     };
+
+    const handleVote = async (targetId) => {
+        if (voteSubmitting) return;
+        setVoteSubmitting(true);
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/puzzles/zombie-vote`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ voterId: user.uniqueId, targetId, roomCode: user.roomCode })
+            });
+            const data = await res.json();
+            if (data.success || data.finalized) {
+                setMyVote(targetId);
+                if (data.finalized) {
+                    setVoteStatus(prev => ({
+                        ...prev,
+                        finalized: true,
+                        targetName: data.targetName,
+                        votesCount: data.votesCount,
+                        totalZombies: data.totalZombies
+                    }));
+                } else {
+                    setVoteStatus(prev => ({
+                        ...prev,
+                        votesCount: data.votesCount,
+                        totalZombies: data.totalZombies
+                    }));
+                }
+            }
+        } catch (e) {
+            console.error('Vote failed', e);
+        }
+        setVoteSubmitting(false);
+    };
+
+    const isFinalized = voteStatus?.finalized;
 
     return (
         <div className="medbay-container">
@@ -334,7 +395,6 @@ const MedBay = ({ onBack, user, setUser }) => {
                             </span>
                         </div>
                         <ECGMonitor playing={playing} />
-                        {/* <SignalDisplay /> */}
                         <MorseRef />
 
                         <div className="mb-decode-panel">
@@ -371,29 +431,80 @@ const MedBay = ({ onBack, user, setUser }) => {
                 {found && user.persona === 'zombie' && (
                     <div className="mb-success zombie-target-panel">
                         <div className="mb-success-icon" style={{color: '#f33'}}>☣</div>
-                        <h2>{message}</h2>
-                        <div className="human-list">
-                            {humans.length === 0 ? (
-                                <p>No humans remaining or fetching...</p>
-                            ) : (
-                                humans.map(h => (
-                                    <button
-                                        key={h.uniqueId}
-                                        className="target-btn"
-                                        onClick={async () => {
-                                            setMessage('Infection spread to ' + h.name + '. Meet up at the Lab entrance!');
-                                            await fetch(`${API_BASE_URL}/api/puzzles/target-infect`, {
-                                                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                                                body: JSON.stringify({ targetId: h.uniqueId, roomCode: user.roomCode })
-                                            });
-                                            setTimeout(() => onBack(), 3500);
-                                        }}
-                                    >
-                                        [ TARGET: {h.name} ]
-                                    </button>
-                                ))
-                            )}
-                        </div>
+
+                        {/* ── Vote already finalized ── */}
+                        {isFinalized ? (
+                            <div className="vote-finalized-panel">
+                                <h2 className="vote-finalized-title">☠ TARGET SELECTED ☠</h2>
+                                <div className="vote-finalized-name">{voteStatus.targetName}</div>
+                                <p className="vote-finalized-sub">
+                                    The horde has spoken. Infection deployed.
+                                    <br />Rendezvous at the Laboratory entrance.
+                                </p>
+                                <button className="vote-return-btn" onClick={onBack}>[ RETURN TO MAP ]</button>
+                            </div>
+                        ) : (
+                            <>
+                                {/* ── Collaboration banner ── */}
+                                <div className="vote-collab-banner">
+                                    <div className="vote-collab-icon">🧟‍♂️</div>
+                                    <h2>HORDE COUNCIL</h2>
+                                    <p>
+                                        Meet at the <strong>Laboratory entrance</strong> with your fellow infected.
+                                        <br />Vote together — the target with the most votes will be infected.
+                                    </p>
+                                </div>
+
+                                {/* ── Vote progress ── */}
+                                {voteStatus && (
+                                    <div className="vote-progress">
+                                        <div className="vote-progress-bar">
+                                            <div
+                                                className="vote-progress-fill"
+                                                style={{ width: `${(voteStatus.votesCount / Math.max(voteStatus.totalZombies, 1)) * 100}%` }}
+                                            />
+                                        </div>
+                                        <div className="vote-progress-label">
+                                            {voteStatus.votesCount} / {voteStatus.totalZombies} zombies voted
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* ── Human target list with vote counts ── */}
+                                <div className="human-list vote-list">
+                                    {humans.length === 0 ? (
+                                        <p>No humans remaining or fetching...</p>
+                                    ) : (
+                                        humans.map(h => {
+                                            const voteCount = voteStatus?.tally?.[h.uniqueId] || 0;
+                                            const isMyVote = myVote === h.uniqueId;
+                                            return (
+                                                <button
+                                                    key={h.uniqueId}
+                                                    className={`target-btn vote-target-btn ${isMyVote ? 'voted' : ''}`}
+                                                    onClick={() => handleVote(h.uniqueId)}
+                                                    disabled={voteSubmitting}
+                                                >
+                                                    <span className="vote-target-name">
+                                                        {isMyVote && <span className="vote-check">✓ </span>}
+                                                        {h.name}
+                                                    </span>
+                                                    {voteCount > 0 && (
+                                                        <span className="vote-count">{voteCount} vote{voteCount !== 1 ? 's' : ''}</span>
+                                                    )}
+                                                </button>
+                                            );
+                                        })
+                                    )}
+                                </div>
+
+                                {myVote && (
+                                    <div className="vote-waiting-msg">
+                                        Waiting for all zombies to vote...
+                                    </div>
+                                )}
+                            </>
+                        )}
                     </div>
                 )}
             </div>

@@ -15,6 +15,24 @@ router.post('/start-game', async (req, res) => {
     room.status = 'active';
     await room.save();
 
+    // ── Pre-select 5 random players as latent infected ──
+    const ZOMBIE_TARGET = 5;
+    const players = await User.find({ roomCode, isAdmin: false });
+    
+    // Fisher-Yates shuffle
+    const shuffled = [...players];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    const selected = shuffled.slice(0, Math.min(ZOMBIE_TARGET, shuffled.length));
+    for (const player of selected) {
+      player.latentInfected = true;
+      await player.save();
+    }
+    console.log(`[GAME START] Room ${roomCode}: Pre-selected ${selected.length} latent infected: ${selected.map(s => s.name).join(', ')}`);
+
     // Broadcast to room
     const io = req.app.get('io');
     if (io) {
@@ -23,6 +41,7 @@ router.post('/start-game', async (req, res) => {
 
     res.json({ success: true, message: 'Game started!' });
   } catch (error) {
+    console.error('[START GAME ERROR]', error);
     res.status(500).json({ error: 'Failed to start game' });
   }
 });

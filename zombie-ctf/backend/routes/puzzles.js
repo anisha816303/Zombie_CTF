@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const Room = require('../models/Room');
 
 // Puzzle configuration (testing logic)
 const PUZZLES = {
@@ -9,14 +10,6 @@ const PUZZLES = {
   med_bay: { answer: 'antidote' },
   archive: { answer: 'archives' }
 };
-
-// Zombie conversion config
-// Trigger conversions when a player reaches this many completed puzzles
-const ZOMBIE_THRESHOLD = 3; // after completing 3rd puzzle
-// Target number of zombies per room when threshold is reached
-const ZOMBIE_TARGET = 5;
-// Individual chance fallback (kept for compatibility, not primary mechanism)
-const ZOMBIE_CHANCE = 0.3;
 
 router.post('/submit', async (req, res) => {
   try {
@@ -45,21 +38,22 @@ router.post('/submit', async (req, res) => {
     let zombieConverted = false;
     const convertedUsers = [];
 
-    // Convert the person when they clear the archives puzzle, up to ZOMBIE_TARGET
+    // ── Archive puzzle: reveal latent infection ──
+    // Players were pre-selected as latentInfected when the game started.
+    // Clearing archives reveals their fate.
     if (puzzleId === 'archive' && user.persona !== 'zombie') {
-      const currentZombies = await User.countDocuments({ roomCode: user.roomCode, persona: 'zombie', isAdmin: false });
-      if (currentZombies < ZOMBIE_TARGET) {
+      if (user.latentInfected) {
+        // The virus was already in them — activate it
         user.persona = 'zombie';
         user.isInfected = true;
-        convertedUsers.push({ uniqueId: user.uniqueId, name: user.name });
         zombieConverted = true;
-        console.log(`[INFECTION CHECK] Converted user ${user.name} in room ${user.roomCode} upon clearing archives.`);
+        convertedUsers.push({ uniqueId: user.uniqueId, name: user.name });
+        console.log(`[INFECTION REVEAL] ${user.name} in room ${user.roomCode} was latent infected — now a zombie.`);
       } else {
-        console.log(`[INFECTION CHECK] Room ${user.roomCode} already has ${currentZombies} zombies (target ${ZOMBIE_TARGET}). Not converting ${user.name}.`);
+        console.log(`[INFECTION REVEAL] ${user.name} in room ${user.roomCode} is clean. Archives cleared safely.`);
       }
     }
 
-    // Save the user (their progress/score)
     await user.save();
 
     // Broadcast to room
@@ -86,6 +80,7 @@ router.post('/submit', async (req, res) => {
     });
 
   } catch (error) {
+    console.error('[SUBMIT ERROR]', error);
     res.status(500).json({ error: 'Submission failed' });
   }
 });
@@ -111,6 +106,7 @@ router.post('/reset', async (req, res) => {
     user.persona = 'person';
     user.isInfected = false;
     user.score = 0;
+    user.latentInfected = false;
 
     await user.save();
     res.json({ success: true, message: 'Progress reset!', user });
@@ -128,9 +124,162 @@ router.get('/humans/:roomCode', async (req, res) => {
   }
 });
 
+// ── Zombie collaborative voting (Among Us style) ──────────────────
+
+// Cast a vote for a target
+router.post('/zombie-vote', async (req, res) => {
+  try {
+    const { voterId, targetId, roomCode } = req.body;
+    if (!voterId || !targetId || !roomCode) {
+      return res.status(400).json({ error: 'Missing parameters' });
+    }
+
+    const room = await Room.findOne({ roomCode });
+    if (!room) return res.status(404).json({ error: 'Room not found' });
+
+    // If vote is already finalized, reject
+    if (room.zombieVoteFinalized) {
+      return res.json({
+        success: false,
+        message: 'Vote already finalized',
+        finalized: true,
+        targetName: room.zombieVoteTargetName
+      });
+    }
+
+    // Check if this zombie already voted — update their vote
+    const existingVoteIdx = room.zombieVotes.findIndex(v => v.voterId === voterId);
+    if (existingVoteIdx >= 0) {
+      room.zombieVotes[existingVoteIdx].targetId = targetId;
+    } else {
+      room.zombieVotes.push({ voterId, targetId });
+    }
+
+    // Count total zombies in the room (to know when all have voted)
+    const totalZombies = await User.countDocuments({
+      roomCode,
+      persona: 'zombie',
+      isAdmin: false
+    });
+
+    // Check if all zombies have voted
+    const allVoted = room.zombieVotes.length >= totalZombies;
+
+    // If all voted, finalize — tally votes and pick winner
+    if (allVoted) {
+      // Tally votes
+      const tally = {};
+      for (const vote of room.zombieVotes) {
+        tally[vote.targetId] = (tally[vote.targetId] || 0) + 1;
+      }
+      // Find the target with the most votes (random tiebreak)
+      let maxVotes = 0;
+      let winners = [];
+      for (const [tid, count] of Object.entries(tally)) {
+        if (count > maxVotes) {
+          maxVotes = count;
+          winners = [tid];
+        } else if (count === maxVotes) {
+          winners.push(tid);
+        }
+      }
+      const winnerId = winners[Math.floor(Math.random() * winners.length)];
+      const target = await User.findOne({ uniqueId: winnerId });
+
+      if (target) {
+        room.zombieVoteFinalized = true;
+        room.zombieVoteTargetId = winnerId;
+        room.zombieVoteTargetName = target.name;
+
+        // Infect the target
+        target.infectionPendingUntil = new Date(Date.now() + 60000); // 60s countdown
+        await target.save();
+
+        const io = req.app.get('io');
+        if (io) {
+          io.to(roomCode).emit('zombie-vote-update', {
+            votes: room.zombieVotes,
+            totalZombies,
+            finalized: true,
+            targetId: winnerId,
+            targetName: target.name
+          });
+          io.to(roomCode).emit('infection-targeted', { targetId: winnerId });
+        }
+      }
+    } else {
+      // Broadcast vote update (not finalized yet)
+      const io = req.app.get('io');
+      if (io) {
+        io.to(roomCode).emit('zombie-vote-update', {
+          votes: room.zombieVotes,
+          totalZombies,
+          finalized: false,
+          targetId: null,
+          targetName: null
+        });
+      }
+    }
+
+    await room.save();
+
+    res.json({
+      success: true,
+      finalized: room.zombieVoteFinalized,
+      targetName: room.zombieVoteTargetName,
+      votesCount: room.zombieVotes.length,
+      totalZombies
+    });
+
+  } catch (error) {
+    console.error('[ZOMBIE VOTE ERROR]', error);
+    res.status(500).json({ error: 'Vote failed' });
+  }
+});
+
+// Get current vote status
+router.get('/zombie-vote-status/:roomCode', async (req, res) => {
+  try {
+    const room = await Room.findOne({ roomCode: req.params.roomCode });
+    if (!room) return res.status(404).json({ error: 'Room not found' });
+
+    const totalZombies = await User.countDocuments({
+      roomCode: req.params.roomCode,
+      persona: 'zombie',
+      isAdmin: false
+    });
+
+    // Build tally for UI
+    const tally = {};
+    for (const vote of room.zombieVotes) {
+      tally[vote.targetId] = (tally[vote.targetId] || 0) + 1;
+    }
+
+    res.json({
+      success: true,
+      finalized: room.zombieVoteFinalized,
+      targetId: room.zombieVoteTargetId,
+      targetName: room.zombieVoteTargetName,
+      votesCount: room.zombieVotes.length,
+      totalZombies,
+      tally
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get vote status' });
+  }
+});
+
+// Legacy target-infect (kept for backward compat, now checks vote finalization)
 router.post('/target-infect', async (req, res) => {
   try {
     const { targetId, roomCode } = req.body;
+
+    // Check if vote is already finalized
+    const room = await Room.findOne({ roomCode });
+    if (room && room.zombieVoteFinalized) {
+      return res.json({ success: false, message: 'Target already selected by vote' });
+    }
+
     const target = await User.findOne({ uniqueId: targetId });
     if (!target) return res.status(404).json({ error: 'Target not found' });
 

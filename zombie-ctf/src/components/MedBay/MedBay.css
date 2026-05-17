@@ -302,3 +302,162 @@
     color: #fff;
     box-shadow: 0 0 15px #ff0000;
 }
+
+/* ── Collaboration Banner ── */
+.vote-collab-banner {
+    text-align: center;
+    padding: 20px 16px 16px;
+    margin-bottom: 16px;
+    border: 1px solid rgba(255, 60, 60, 0.25);
+    border-radius: 4px;
+    background: rgba(20, 0, 0, 0.6);
+}
+.vote-collab-icon {
+    font-size: 2.4rem;
+    margin-bottom: 8px;
+}
+.vote-collab-banner h2 {
+    color: #ff5555;
+    font-size: 1.1rem;
+    letter-spacing: 5px;
+    margin: 0 0 10px;
+    text-shadow: 0 0 10px rgba(255, 0, 0, 0.4);
+}
+.vote-collab-banner p {
+    color: rgba(255, 140, 120, 0.7);
+    font-size: 0.72rem;
+    line-height: 1.6;
+    margin: 0;
+    letter-spacing: 0.5px;
+}
+.vote-collab-banner strong {
+    color: #ff8866;
+}
+
+/* ── Vote Progress Bar ── */
+.vote-progress {
+    margin-bottom: 18px;
+}
+.vote-progress-bar {
+    height: 8px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 40, 40, 0.3);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 6px;
+}
+.vote-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff2222, #ff5533);
+    border-radius: 4px;
+    transition: width 0.5s ease;
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+}
+.vote-progress-label {
+    font-size: 0.62rem;
+    color: rgba(255, 100, 80, 0.6);
+    letter-spacing: 2px;
+    text-align: center;
+}
+
+/* ── Vote Target Buttons ── */
+.vote-list {
+    gap: 10px !important;
+}
+.vote-target-btn {
+    display: flex !important;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.25s;
+}
+.vote-target-btn.voted {
+    background: rgba(180, 0, 0, 0.35);
+    border-color: #ff4444;
+    color: #fff;
+    box-shadow: 0 0 12px rgba(255, 0, 0, 0.2);
+}
+.vote-target-name {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.vote-check {
+    color: #44ff44;
+    font-weight: bold;
+    font-size: 1rem;
+}
+.vote-count {
+    font-size: 0.65rem;
+    color: #ff8888;
+    background: rgba(255, 0, 0, 0.15);
+    border: 1px solid rgba(255, 40, 40, 0.3);
+    padding: 2px 8px;
+    border-radius: 10px;
+    letter-spacing: 1px;
+}
+
+/* ── Waiting Message ── */
+.vote-waiting-msg {
+    text-align: center;
+    margin-top: 16px;
+    font-size: 0.7rem;
+    color: rgba(255, 120, 100, 0.5);
+    letter-spacing: 2px;
+    animation: pulse-wait 1.5s infinite alternate;
+}
+@keyframes pulse-wait {
+    0%   { opacity: 0.4; }
+    100% { opacity: 1; }
+}
+
+/* ── Finalized Panel ── */
+.vote-finalized-panel {
+    text-align: center;
+    padding: 20px 0;
+    animation: fadeUp 0.5s ease;
+}
+.vote-finalized-title {
+    color: #ff3333;
+    font-size: 1.2rem;
+    letter-spacing: 4px;
+    margin: 0 0 16px;
+    text-shadow: 0 0 15px rgba(255, 0, 0, 0.6);
+    animation: blink-warn-title 1.2s infinite;
+}
+@keyframes blink-warn-title {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.6; }
+}
+.vote-finalized-name {
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 0 20px #ff0000;
+    margin-bottom: 16px;
+    letter-spacing: 3px;
+}
+.vote-finalized-sub {
+    font-size: 0.72rem;
+    color: rgba(255, 140, 120, 0.6);
+    line-height: 1.7;
+    margin: 0 0 20px;
+    letter-spacing: 0.5px;
+}
+.vote-return-btn {
+    background: rgba(20, 0, 0, 0.8);
+    border: 1px solid rgba(220, 40, 40, 0.5);
+    color: #ff6666;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+}
+.vote-return-btn:hover {
+    background: rgba(180, 0, 0, 0.4);
+    border-color: #ff4444;
+    color: #fff;
+    box-shadow: 0 0 12px rgba(255, 0, 0, 0.2);
+}
