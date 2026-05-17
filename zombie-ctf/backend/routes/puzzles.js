@@ -8,7 +8,9 @@ const PUZZLES = {
   lab: { answer: 'it spreads through everyone' }, // Example answer
   sector_b: { answer: 'containment' },
   med_bay: { answer: 'antidote' },
-  archive: { answer: 'archives' }
+  archive: { answer: 'archives' },
+  server_core: { answer: 'stabilize' },
+  ventilation_shafts: { answer: 'override' }
 };
 
 router.post('/submit', async (req, res) => {
@@ -261,6 +263,140 @@ router.get('/zombie-vote-status/:roomCode', async (req, res) => {
       targetId: room.zombieVoteTargetId,
       targetName: room.zombieVoteTargetName,
       votesCount: room.zombieVotes.length,
+      totalZombies,
+      tally
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get vote status' });
+  }
+});
+
+// ── Second Zombie collaborative voting (Ventilation Shafts) ──────────────
+
+router.post('/ventilation-vote', async (req, res) => {
+  try {
+    const { voterId, targetId, roomCode } = req.body;
+    if (!voterId || !targetId || !roomCode) {
+      return res.status(400).json({ error: 'Missing parameters' });
+    }
+
+    const room = await Room.findOne({ roomCode });
+    if (!room) return res.status(404).json({ error: 'Room not found' });
+
+    if (room.ventilationVoteFinalized) {
+      return res.json({
+        success: false,
+        message: 'Vote already finalized',
+        finalized: true,
+        targetName: room.ventilationVoteTargetName
+      });
+    }
+
+    const existingVoteIdx = room.ventilationVotes.findIndex(v => v.voterId === voterId);
+    if (existingVoteIdx >= 0) {
+      room.ventilationVotes[existingVoteIdx].targetId = targetId;
+    } else {
+      room.ventilationVotes.push({ voterId, targetId });
+    }
+
+    const totalZombies = await User.countDocuments({
+      roomCode,
+      persona: 'zombie',
+      isAdmin: false
+    });
+
+    const allVoted = room.ventilationVotes.length >= totalZombies;
+
+    if (allVoted) {
+      const tally = {};
+      for (const vote of room.ventilationVotes) {
+        tally[vote.targetId] = (tally[vote.targetId] || 0) + 1;
+      }
+      let maxVotes = 0;
+      let winners = [];
+      for (const [tid, count] of Object.entries(tally)) {
+        if (count > maxVotes) {
+          maxVotes = count;
+          winners = [tid];
+        } else if (count === maxVotes) {
+          winners.push(tid);
+        }
+      }
+      const winnerId = winners[Math.floor(Math.random() * winners.length)];
+      const target = await User.findOne({ uniqueId: winnerId });
+
+      if (target) {
+        room.ventilationVoteFinalized = true;
+        room.ventilationVoteTargetId = winnerId;
+        room.ventilationVoteTargetName = target.name;
+
+        // Infect the target
+        target.infectionPendingUntil = new Date(Date.now() + 60000); // 60s countdown
+        await target.save();
+
+        const io = req.app.get('io');
+        if (io) {
+          io.to(roomCode).emit('ventilation-vote-update', {
+            votes: room.ventilationVotes,
+            totalZombies,
+            finalized: true,
+            targetId: winnerId,
+            targetName: target.name
+          });
+          io.to(roomCode).emit('infection-targeted', { targetId: winnerId });
+        }
+      }
+    } else {
+      const io = req.app.get('io');
+      if (io) {
+        io.to(roomCode).emit('ventilation-vote-update', {
+          votes: room.ventilationVotes,
+          totalZombies,
+          finalized: false,
+          targetId: null,
+          targetName: null
+        });
+      }
+    }
+
+    await room.save();
+
+    res.json({
+      success: true,
+      finalized: room.ventilationVoteFinalized,
+      targetName: room.ventilationVoteTargetName,
+      votesCount: room.ventilationVotes.length,
+      totalZombies
+    });
+
+  } catch (error) {
+    console.error('[VENTILATION VOTE ERROR]', error);
+    res.status(500).json({ error: 'Vote failed' });
+  }
+});
+
+router.get('/ventilation-vote-status/:roomCode', async (req, res) => {
+  try {
+    const room = await Room.findOne({ roomCode: req.params.roomCode });
+    if (!room) return res.status(404).json({ error: 'Room not found' });
+
+    const totalZombies = await User.countDocuments({
+      roomCode: req.params.roomCode,
+      persona: 'zombie',
+      isAdmin: false
+    });
+
+    const tally = {};
+    for (const vote of room.ventilationVotes) {
+      tally[vote.targetId] = (tally[vote.targetId] || 0) + 1;
+    }
+
+    res.json({
+      success: true,
+      finalized: room.ventilationVoteFinalized,
+      targetId: room.ventilationVoteTargetId,
+      targetName: room.ventilationVoteTargetName,
+      votesCount: room.ventilationVotes.length,
       totalZombies,
       tally
     });

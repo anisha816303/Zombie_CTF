@@ -36,6 +36,14 @@ io.on('connection', (socket) => {
       // data: { roomCode, freq, amp, phase, harm }
       socket.to(data.roomCode).emit('control-room-update', data);
     });
+
+    socket.on('server-core-action', (data) => {
+      socket.to(data.roomCode).emit('server-core-update', data);
+    });
+
+    socket.on('ventilation-action', (data) => {
+      socket.to(data.roomCode).emit('ventilation-update', data);
+    });
   });
 });
 

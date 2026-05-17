@@ -48,13 +48,29 @@ const NODES = [
     pos: { x: 28, y: 72 },
     locked: true,
   },
+  {
+    id: "server_core",
+    label: "SERVER CORE",
+    status: "OFFLINE",
+    emoji: "🖧",
+    pos: { x: 85, y: 50 },
+    locked: true,
+  },
+  {
+    id: "ventilation",
+    label: "VENTILATION",
+    status: "LOCKED",
+    emoji: "💨",
+    pos: { x: 50, y: 15 },
+    locked: true,
+  },
 ];
 
 
 
 import API_BASE_URL from "../../config";
 
-const Map = ({ onEnterLab, onEnterSectorB, onEnterMedBay, onEnterArchive, onEnterControlRoom, user, showAdminBtn, onOpenAdmin, setUser }) => {
+const Map = ({ onEnterLab, onEnterSectorB, onEnterMedBay, onEnterArchive, onEnterControlRoom, onEnterServerCore, onEnterVentilation, user, showAdminBtn, onOpenAdmin, setUser }) => {
   const [typewriterDone, setTypewriterDone] = useState(false);
   const [targetVisible, setTargetVisible] = useState(false);
   const [popup, setPopup] = useState(null);         // node id of locked popup
@@ -70,7 +86,8 @@ const Map = ({ onEnterLab, onEnterSectorB, onEnterMedBay, onEnterArchive, onEnte
     if (user.completedPuzzles === 0) targetNodeId = 'lab';
     else if (user.completedPuzzles === 1) targetNodeId = 'sector_b';
     else if (user.completedPuzzles === 2) targetNodeId = 'archive';
-    else if (user.completedPuzzles >= 3) targetNodeId = user.persona === 'zombie' ? 'med_bay' : 'control';
+    else if (user.completedPuzzles === 3) targetNodeId = user.persona === 'zombie' ? 'med_bay' : 'control';
+    else if (user.completedPuzzles >= 4) targetNodeId = user.persona === 'zombie' ? 'ventilation' : 'server_core';
   }
 
   const getWarnings = () => {
@@ -194,6 +211,14 @@ const Map = ({ onEnterLab, onEnterSectorB, onEnterMedBay, onEnterArchive, onEnte
     if (node.id === "control" && onEnterControlRoom) {
       onEnterControlRoom();
     }
+    // Server Core navigate
+    if (node.id === "server_core" && onEnterServerCore) {
+      onEnterServerCore();
+    }
+    // Ventilation navigate
+    if (node.id === "ventilation" && onEnterVentilation) {
+      onEnterVentilation();
+    }
   };
 
   const handleReset = async () => {
@@ -311,18 +336,37 @@ const Map = ({ onEnterLab, onEnterSectorB, onEnterMedBay, onEnterArchive, onEnte
             if (node.id === "control") {
               if (user?.completedPuzzles >= 3 && user?.persona === "person") {
                 isLocked = false;
-                currentStatus = "COMMS";
+                currentStatus = user?.completedPuzzles >= 4 ? "CLEARED" : "COMMS";
               }
             }
+
+            // Server Core: unlock for humans after 4th puzzle
+            if (node.id === "server_core") {
+              if (user?.completedPuzzles >= 4 && user?.persona === "person") {
+                isLocked = false;
+                currentStatus = "CRITICAL";
+              }
+            }
+
+            // Ventilation: unlock for zombies after 4th puzzle
+            if (node.id === "ventilation") {
+              if (user?.completedPuzzles >= 4 && user?.persona === "zombie") {
+                isLocked = false;
+                currentStatus = "OVERRIDE";
+              }
+            }
+
             if (node.id === "archive" && user?.completedPuzzles >= 2) {
               isLocked = false;
-              currentStatus = "ONLINE";
+              currentStatus = user?.completedPuzzles >= 3 ? "CLEARED" : "ONLINE";
             }
 
             const blink = (
               (node.id === 'archive' && user?.completedPuzzles === 2) ||
               (node.id === 'control' && user?.completedPuzzles === 3 && user?.persona === 'person') ||
-              (node.id === 'med_bay' && user?.completedPuzzles === 3 && user?.persona === 'zombie')
+              (node.id === 'med_bay' && user?.completedPuzzles === 3 && user?.persona === 'zombie') ||
+              (node.id === 'server_core' && user?.completedPuzzles === 4 && user?.persona === 'person') ||
+              (node.id === 'ventilation' && user?.completedPuzzles === 4 && user?.persona === 'zombie')
             );
 
             return (

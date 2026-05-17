@@ -13,6 +13,9 @@ import API_BASE_URL from "./config";
 import Lobby from "./components/Lobby/Lobby";
 import "./App.css";
 
+import ServerCore from "./components/ServerCore/ServerCore";
+import VentilationShafts from "./components/VentilationShafts/VentilationShafts";
+
 function App() {
   const [user, setUser] = useState(null);
   const [scene, setScene] = useState("map"); 
@@ -150,6 +153,8 @@ function App() {
         onEnterMedBay={() => setScene("med_bay")} 
         onEnterArchive={() => setScene("archive")}
         onEnterControlRoom={() => setScene("control_room")}
+        onEnterServerCore={() => setScene("server_core")}
+        onEnterVentilation={() => setScene("ventilation")}
         user={user} 
         setUser={setUser}
         showAdminBtn={user.isAdmin}
@@ -163,7 +168,11 @@ function App() {
           ? <Archives onBack={() => setScene("map")} user={user} setUser={setUser} />
           : scene === "control_room"
             ? <ControlRoom onBack={() => setScene("map")} user={user} setUser={setUser} />
-            : <MedBay onBack={() => setScene("map")} user={user} setUser={setUser} />}
+            : scene === "server_core"
+              ? <ServerCore onBack={() => setScene("map")} user={user} setUser={setUser} />
+              : scene === "ventilation"
+                ? <VentilationShafts onBack={() => setScene("map")} user={user} setUser={setUser} />
+                : <MedBay onBack={() => setScene("map")} user={user} setUser={setUser} />}
     </>
   );
 }

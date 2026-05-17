@@ -12,7 +12,15 @@ const roomSchema = new mongoose.Schema({
   }],
   zombieVoteFinalized: { type: Boolean, default: false },
   zombieVoteTargetId: { type: String, default: null },
-  zombieVoteTargetName: { type: String, default: null }
+  zombieVoteTargetName: { type: String, default: null },
+  // Second Zombie collaborative voting (Ventilation Shafts)
+  ventilationVotes: [{
+    voterId: { type: String },
+    targetId: { type: String }
+  }],
+  ventilationVoteFinalized: { type: Boolean, default: false },
+  ventilationVoteTargetId: { type: String, default: null },
+  ventilationVoteTargetName: { type: String, default: null }
 });
 
 module.exports = mongoose.model('Room', roomSchema);
