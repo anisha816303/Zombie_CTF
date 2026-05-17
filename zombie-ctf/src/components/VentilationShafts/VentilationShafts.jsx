@@ -21,8 +21,8 @@ const useTypewriter = (text, speed = 28, active = true) => {
   return { displayed, done, hidden };
 };
 
-// ─── Smoke Particle System ──────────────────────────────────────
-const SmokeCanvas = ({ keys, onKeyReveal, width, height }) => {
+// ─── Full-screen Smoke Particle System ──────────────────────────
+const SmokeCanvas = ({ keys, onKeyReveal }) => {
   const canvasRef = useRef(null);
   const particlesRef = useRef([]);
   const animRef = useRef(null);
@@ -31,23 +31,27 @@ const SmokeCanvas = ({ keys, onKeyReveal, width, height }) => {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    canvas.width = width;
-    canvas.height = height;
 
-    // Initialize smoke particles
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
     const initParticles = () => {
       const particles = [];
-      for (let i = 0; i < 60; i++) {
+      const w = canvas.width, h = canvas.height;
+      for (let i = 0; i < 80; i++) {
         particles.push({
-          x: Math.random() * width,
-          y: Math.random() * height,
-          size: 20 + Math.random() * 50,
-          speedX: (Math.random() - 0.5) * 0.8,
-          speedY: -0.3 - Math.random() * 0.5,
-          opacity: 0.15 + Math.random() * 0.25,
-          life: Math.random() * 200,
-          maxLife: 200 + Math.random() * 200,
+          x: Math.random() * w,
+          y: Math.random() * h,
+          size: 30 + Math.random() * 80,
+          speedX: (Math.random() - 0.5) * 0.6,
+          speedY: -0.2 - Math.random() * 0.4,
+          opacity: 0.08 + Math.random() * 0.18,
+          life: Math.random() * 300,
+          maxLife: 300 + Math.random() * 300,
         });
       }
       return particles;
@@ -56,37 +60,32 @@ const SmokeCanvas = ({ keys, onKeyReveal, width, height }) => {
     particlesRef.current = initParticles();
 
     const render = () => {
-      ctx.clearRect(0, 0, width, height);
+      const w = canvas.width, h = canvas.height;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, w, h);
 
-      // Draw ambient haze
-      ctx.fillStyle = 'rgba(0, 30, 0, 0.05)';
-      ctx.fillRect(0, 0, width, height);
-
-      // Update and draw particles
       particlesRef.current.forEach(p => {
         p.x += p.speedX;
         p.y += p.speedY;
         p.life++;
 
-        // Wrap around
-        if (p.y < -p.size) p.y = height + p.size;
-        if (p.x < -p.size) p.x = width + p.size;
-        if (p.x > width + p.size) p.x = -p.size;
+        if (p.y < -p.size) p.y = h + p.size;
+        if (p.x < -p.size) p.x = w + p.size;
+        if (p.x > w + p.size) p.x = -p.size;
 
-        // Reset old particles
         if (p.life > p.maxLife) {
-          p.x = Math.random() * width;
-          p.y = height + Math.random() * 40;
+          p.x = Math.random() * w;
+          p.y = h + Math.random() * 60;
           p.life = 0;
-          p.opacity = 0.15 + Math.random() * 0.25;
+          p.opacity = 0.08 + Math.random() * 0.18;
         }
 
         const lifeRatio = p.life / p.maxLife;
-        const fade = lifeRatio < 0.1 ? lifeRatio * 10 : lifeRatio > 0.8 ? (1 - lifeRatio) * 5 : 1;
+        const fade = lifeRatio < 0.15 ? lifeRatio / 0.15 : lifeRatio > 0.75 ? (1 - lifeRatio) / 0.25 : 1;
 
         const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
-        gradient.addColorStop(0, `rgba(80, 200, 80, ${p.opacity * fade * 0.4})`);
-        gradient.addColorStop(0.5, `rgba(40, 100, 40, ${p.opacity * fade * 0.2})`);
+        gradient.addColorStop(0, `rgba(60, 180, 60, ${p.opacity * fade * 0.35})`);
+        gradient.addColorStop(0.4, `rgba(30, 90, 30, ${p.opacity * fade * 0.15})`);
         gradient.addColorStop(1, 'transparent');
         ctx.fillStyle = gradient;
         ctx.fillRect(p.x - p.size, p.y - p.size, p.size * 2, p.size * 2);
@@ -94,10 +93,10 @@ const SmokeCanvas = ({ keys, onKeyReveal, width, height }) => {
         // Check if smoke reveals any keys
         keys.forEach((key, idx) => {
           if (revealedRef.current.has(idx)) return;
-          const kx = (key.x / 100) * width;
-          const ky = (key.y / 100) * height;
+          const kx = (key.x / 100) * w;
+          const ky = (key.y / 100) * h;
           const dist = Math.sqrt((p.x - kx) ** 2 + (p.y - ky) ** 2);
-          if (dist < p.size * 0.6 && fade > 0.5) {
+          if (dist < p.size * 0.5 && fade > 0.4) {
             revealedRef.current.add(idx);
             onKeyReveal(idx);
           }
@@ -108,10 +107,13 @@ const SmokeCanvas = ({ keys, onKeyReveal, width, height }) => {
     };
 
     render();
-    return () => cancelAnimationFrame(animRef.current);
-  }, [keys, width, height]);
+    return () => {
+      cancelAnimationFrame(animRef.current);
+      window.removeEventListener('resize', resize);
+    };
+  }, [keys]);
 
-  return <canvas ref={canvasRef} className="smoke-canvas" />;
+  return <canvas ref={canvasRef} className="smoke-canvas-fullscreen" />;
 };
 
 // ─── Main Component ─────────────────────────────────────────────
@@ -121,14 +123,17 @@ const VentilationShafts = ({ onBack, user, setUser }) => {
   const [zombieNames, setZombieNames] = useState({});
   const [keys, setKeys] = useState([]);
   const [revealedKeys, setRevealedKeys] = useState(new Set());
-  const [collectedKeys, setCollectedKeys] = useState(new Set()); // keys collected by ANY zombie
+  const [collectedKeys, setCollectedKeys] = useState(new Set());
   const [unlockedLocks, setUnlockedLocks] = useState(new Set());
   const [found, setFound] = useState(false);
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [humans, setHumans] = useState([]);
-  const [areaDims, setAreaDims] = useState({ width: 360, height: 400 });
-  const areaRef = useRef(null);
+
+  // Phase tracking: 'search' → 'unlock' → 'execute'
+  const myKeyCollected = collectedKeys.has(myLockIndex);
+  const myLockUnlocked = unlockedLocks.has(myLockIndex);
+  const allUnlocked = zombieCount > 0 && unlockedLocks.size >= zombieCount;
 
   // Voting state
   const [myVote, setMyVote] = useState(null);
@@ -137,21 +142,8 @@ const VentilationShafts = ({ onBack, user, setUser }) => {
 
   const socketRef = useRef(null);
 
-  const introText = 'ENVIRONMENTAL OVERRIDE — ACCESSING DUCT NETWORK\n\nThe ventilation system has been compromised.\nToxic smoke floods the corridors, carrying the Chrysalis pathogen.\n\nHidden access keys are embedded in the duct panels.\nThe smoke will reveal them — collect your key and unlock the seal.';
+  const introText = 'ENVIRONMENTAL OVERRIDE — ACCESSING DUCT NETWORK\n\nThe ventilation system has been compromised.\nToxic smoke floods the corridors, carrying the Chrysalis pathogen.\n\nHidden access keys are embedded in the duct panels.\nThe smoke will reveal them — find your key in the haze.';
   const { displayed, done: twDone, hidden: twHidden } = useTypewriter(introText, 22);
-
-  // Measure area
-  useEffect(() => {
-    const measure = () => {
-      if (areaRef.current) {
-        const rect = areaRef.current.getBoundingClientRect();
-        setAreaDims({ width: rect.width, height: rect.height });
-      }
-    };
-    measure();
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
-  }, []);
 
   // Fetch zombie info and generate keys
   useEffect(() => {
@@ -180,9 +172,9 @@ const VentilationShafts = ({ onBack, user, setUser }) => {
             const pseudoRand = (seed * (i + 1) * 7919) % 10000;
             generatedKeys.push({
               id: i,
-              x: 10 + (pseudoRand % 80), // 10% to 90%
-              y: 10 + ((pseudoRand * 13) % 70), // 10% to 80%
-              symbol: String.fromCharCode(0x0391 + i), // Greek letters: Α, Β, Γ, ...
+              x: 15 + (pseudoRand % 70),
+              y: 25 + ((pseudoRand * 13) % 50),
+              symbol: String.fromCharCode(0x0391 + i),
             });
           }
           setKeys(generatedKeys);
@@ -220,6 +212,16 @@ const VentilationShafts = ({ onBack, user, setUser }) => {
     if (found && user.persona === 'zombie') fetchVoteStatus();
   }, [found, user.persona]);
 
+  const isFinalized = voteStatus?.finalized;
+
+  // Auto-navigate back to map when vote is finalized
+  useEffect(() => {
+    if (isFinalized) {
+      const t = setTimeout(() => onBack(), 4000);
+      return () => clearTimeout(t);
+    }
+  }, [isFinalized]);
+
   const fetchVoteStatus = async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/puzzles/ventilation-vote-status/${user.roomCode}`);
@@ -233,7 +235,7 @@ const VentilationShafts = ({ onBack, user, setUser }) => {
   }, []);
 
   const handleCollectKey = (keyIdx) => {
-    if (keyIdx !== myLockIndex) return; // Only collect YOUR key
+    if (keyIdx !== myLockIndex) return;
     if (collectedKeys.has(keyIdx)) return;
 
     const newCollected = new Set([...collectedKeys, keyIdx]);
@@ -246,8 +248,8 @@ const VentilationShafts = ({ onBack, user, setUser }) => {
   };
 
   const handleUnlockLock = (lockIdx) => {
-    if (lockIdx !== myLockIndex) return; // Only unlock YOUR lock
-    if (!collectedKeys.has(lockIdx)) return; // Must have collected the key first
+    if (lockIdx !== myLockIndex) return;
+    if (!collectedKeys.has(lockIdx)) return;
     if (unlockedLocks.has(lockIdx)) return;
 
     const newUnlocked = new Set([...unlockedLocks, lockIdx]);
@@ -258,8 +260,6 @@ const VentilationShafts = ({ onBack, user, setUser }) => {
       unlockedLocks: [...newUnlocked],
     });
   };
-
-  const allUnlocked = zombieCount > 0 && unlockedLocks.size >= zombieCount;
 
   const handleSubmit = async () => {
     if (!allUnlocked) {
@@ -317,13 +317,37 @@ const VentilationShafts = ({ onBack, user, setUser }) => {
     setVoteSubmitting(false);
   };
 
-  const isFinalized = voteStatus?.finalized;
-  const myKeyCollected = collectedKeys.has(myLockIndex);
-  const myLockUnlocked = unlockedLocks.has(myLockIndex);
+  // Determine current phase for step-by-step UX
+  const phase = myKeyCollected
+    ? (myLockUnlocked ? 'execute' : 'unlock')
+    : 'search';
 
   return (
     <div className="ventilation-container">
       <div className="glitch-overlay-vent" />
+
+      {/* Full-screen smoke — always visible as part of the background */}
+      <SmokeCanvas keys={keys} onKeyReveal={handleKeyReveal} />
+
+      {/* Keys floating over the background (full-screen positioned) */}
+      {!found && keys.map((key, idx) => {
+        const isRevealed = revealedKeys.has(idx);
+        const isCollected = collectedKeys.has(idx);
+        const isMine = idx === myLockIndex;
+        return (
+          <div
+            key={key.id}
+            className={`vent-key ${isRevealed ? 'revealed' : ''} ${isCollected ? 'collected' : ''} ${isMine ? 'mine' : ''}`}
+            style={{ left: `${key.x}%`, top: `${key.y}%` }}
+            onClick={() => isRevealed && !isCollected && isMine && handleCollectKey(idx)}
+          >
+            <div className="key-icon">🔑</div>
+            <div className="key-label">
+              {isMine ? 'YOUR KEY' : (zombieNames[idx] || `KEY ${idx + 1}`)}
+            </div>
+          </div>
+        );
+      })}
 
       <div className="location-header">
         <button className="back-btn" onClick={onBack}>[ RETURN TO MAP ]</button>
@@ -334,85 +358,82 @@ const VentilationShafts = ({ onBack, user, setUser }) => {
         <pre className="vent-tw-text">{displayed}{!twDone && <span className="tw-cur">█</span>}</pre>
       </div>
 
-      <div className="ventilation-content">
-        {!found ? (
-          <>
-            {/* Smoke search area */}
-            <div className="vent-search-area" ref={areaRef}>
-              <SmokeCanvas
-                keys={keys}
-                onKeyReveal={handleKeyReveal}
-                width={areaDims.width}
-                height={areaDims.height}
-              />
+      {/* Phase indicator — subtle hint at bottom */}
+      {!found && (
+        <div className="vent-phase-hint">
+          {phase === 'search' && (
+            <div className="phase-text">
+              <span className="search-pulse" />
+              SEARCHING FOR YOUR KEY IN THE SMOKE...
+            </div>
+          )}
+          {phase === 'unlock' && !myLockUnlocked && (
+            <div className="phase-text phase-unlock">
+              🔑 KEY COLLECTED — UNLOCK YOUR SEAL BELOW
+            </div>
+          )}
+          {phase === 'execute' && !allUnlocked && (
+            <div className="phase-text phase-wait">
+              🔓 YOUR SEAL IS OPEN — WAITING FOR OTHERS ({unlockedLocks.size}/{zombieCount})
+            </div>
+          )}
+          {phase === 'execute' && allUnlocked && (
+            <div className="phase-text phase-ready">
+              ⚡ ALL SEALS OPEN — EXECUTE OVERRIDE
+            </div>
+          )}
+        </div>
+      )}
 
-              {/* Hidden keys revealed by smoke */}
-              {keys.map((key, idx) => {
-                const isRevealed = revealedKeys.has(idx);
-                const isCollected = collectedKeys.has(idx);
-                const isMine = idx === myLockIndex;
+      {/* Lock panel — slides up ONLY after key is collected */}
+      {!found && myKeyCollected && (
+        <div className={`vent-lock-overlay ${myLockUnlocked ? 'minimized' : ''}`}>
+          <div className="vent-lock-panel">
+            <div className="lock-panel-title">AIRLOCK SEALS</div>
+            <div className="lock-grid">
+              {Array.from({ length: zombieCount }, (_, i) => {
+                const isUnlocked = unlockedLocks.has(i);
+                const hasKey = collectedKeys.has(i);
+                const isMine = i === myLockIndex;
                 return (
                   <div
-                    key={key.id}
-                    className={`vent-key ${isRevealed ? 'revealed' : ''} ${isCollected ? 'collected' : ''} ${isMine ? 'mine' : ''}`}
-                    style={{ left: `${key.x}%`, top: `${key.y}%` }}
-                    onClick={() => isRevealed && !isCollected && isMine && handleCollectKey(idx)}
+                    key={i}
+                    className={`lock-item ${isUnlocked ? 'unlocked' : ''} ${isMine ? 'mine' : ''} ${hasKey && !isUnlocked ? 'ready' : ''}`}
+                    onClick={() => isMine && hasKey && !isUnlocked && handleUnlockLock(i)}
                   >
-                    <div className="key-icon">🔑</div>
-                    <div className="key-label">
-                      {isMine ? 'YOUR KEY' : (zombieNames[idx] || `KEY ${idx + 1}`)}
-                    </div>
+                    <div className="lock-icon">{isUnlocked ? '🔓' : '🔒'}</div>
+                    <div className="lock-name">{isMine ? 'YOU' : (zombieNames[i] || `#${i + 1}`)}</div>
+                    {isMine && !hasKey && <div className="lock-status">FIND KEY</div>}
+                    {isMine && hasKey && !isUnlocked && <div className="lock-status tap">TAP TO UNLOCK</div>}
+                    {isUnlocked && <div className="lock-status done">OPEN</div>}
                   </div>
                 );
               })}
-
-              {/* Area label */}
-              <div className="search-area-label">
-                <span className="search-pulse" /> TOXIC SMOKE ZONE — KEYS HIDDEN
-              </div>
             </div>
-
-            {/* Lock panel */}
-            <div className="vent-lock-panel">
-              <div className="lock-panel-title">AIRLOCK SEALS</div>
-              <div className="lock-grid">
-                {Array.from({ length: zombieCount }, (_, i) => {
-                  const isUnlocked = unlockedLocks.has(i);
-                  const hasKey = collectedKeys.has(i);
-                  const isMine = i === myLockIndex;
-                  return (
-                    <div
-                      key={i}
-                      className={`lock-item ${isUnlocked ? 'unlocked' : ''} ${isMine ? 'mine' : ''} ${hasKey && !isUnlocked ? 'ready' : ''}`}
-                      onClick={() => isMine && hasKey && !isUnlocked && handleUnlockLock(i)}
-                    >
-                      <div className="lock-icon">{isUnlocked ? '🔓' : '🔒'}</div>
-                      <div className="lock-name">{isMine ? 'YOU' : (zombieNames[i] || `#${i + 1}`)}</div>
-                      {isMine && !hasKey && <div className="lock-status">FIND KEY</div>}
-                      {isMine && hasKey && !isUnlocked && <div className="lock-status tap">TAP TO UNLOCK</div>}
-                      {isUnlocked && <div className="lock-status done">OPEN</div>}
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="lock-progress">
-                SEALS OPEN: {unlockedLocks.size} / {zombieCount}
-              </div>
+            <div className="lock-progress">
+              SEALS OPEN: {unlockedLocks.size} / {zombieCount}
             </div>
+          </div>
+        </div>
+      )}
 
-            {/* Submit */}
-            <div className="vent-footer">
-              <button
-                className="submit-vent-btn"
-                onClick={handleSubmit}
-                disabled={submitting || !allUnlocked}
-              >
-                ☣ EXECUTE OVERRIDE
-              </button>
-              {message && <div className="vent-message">{message}</div>}
-            </div>
-          </>
-        ) : (
+      {/* Execute override button — appears ONLY after your lock is unlocked */}
+      {!found && myLockUnlocked && (
+        <div className="vent-execute-bar">
+          <button
+            className="submit-vent-btn"
+            onClick={handleSubmit}
+            disabled={submitting || !allUnlocked}
+          >
+            ☣ EXECUTE OVERRIDE
+          </button>
+          {message && <div className="vent-message">{message}</div>}
+        </div>
+      )}
+
+      {/* Voting panel — after puzzle solved */}
+      {found && (
+        <div className="vent-vote-overlay">
           <div className="mb-success zombie-target-panel vent-success-panel">
             <div className="mb-success-icon" style={{ color: '#f33' }}>☣</div>
 
@@ -422,8 +443,8 @@ const VentilationShafts = ({ onBack, user, setUser }) => {
                 <div className="vote-finalized-name">{voteStatus.targetName}</div>
                 <p className="vote-finalized-sub">
                   The horde has spoken. Secondary infection deployed.
+                  <br />Returning to map...
                 </p>
-                <button className="vote-return-btn" onClick={onBack}>[ RETURN TO MAP ]</button>
               </div>
             ) : (
               <>
@@ -485,8 +506,8 @@ const VentilationShafts = ({ onBack, user, setUser }) => {
               </>
             )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

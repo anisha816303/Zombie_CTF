@@ -365,6 +365,14 @@ const MedBay = ({ onBack, user, setUser }) => {
 
     const isFinalized = voteStatus?.finalized;
 
+    // Auto-navigate back to map when vote is finalized
+    useEffect(() => {
+        if (isFinalized) {
+            const t = setTimeout(() => onBack(), 4000);
+            return () => clearTimeout(t);
+        }
+    }, [isFinalized]);
+
     return (
         <div className="medbay-container">
             <div className="glitch-overlay" />

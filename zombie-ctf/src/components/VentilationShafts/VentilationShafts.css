@@ -1,6 +1,6 @@
 /* ============================================
    VENTILATION SHAFTS — SMOKE + KEYS PUZZLE
-   Mobile-first design
+   Full-screen immersive, mobile-first
    ============================================ */
 
 /* ─── Base Container ─── */
@@ -12,8 +12,6 @@
   background-color: #080a05;
   color: #ff3333;
   font-family: 'Share Tech Mono', monospace;
-  display: flex;
-  flex-direction: column;
   overflow: hidden;
 }
 
@@ -27,18 +25,29 @@
   z-index: 50;
 }
 
+/* ─── Full-screen Smoke Canvas ─── */
+.smoke-canvas-fullscreen {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 2;
+}
+
 /* ─── Typewriter Intro ─── */
 .vent-typewriter {
-  position: relative;
+  position: fixed;
+  top: 60px;
+  left: 12px; right: 12px;
   z-index: 15;
-  margin: 60px 12px 0;
-  background: rgba(20, 0, 0, 0.9);
+  background: rgba(20, 0, 0, 0.88);
   border: 1px solid rgba(255, 51, 51, 0.3);
   border-left: 3px solid #ff3333;
   padding: 12px 14px;
   border-radius: 4px;
   backdrop-filter: blur(8px);
-  transition: opacity 0.8s ease, max-height 0.8s ease;
+  transition: opacity 0.8s ease, max-height 0.8s ease, padding 0.8s ease;
   max-height: 250px;
   overflow: hidden;
 }
@@ -47,8 +56,6 @@
   opacity: 0;
   max-height: 0;
   padding: 0 14px;
-  margin-top: 60px;
-  margin-bottom: 0;
   border: none;
   pointer-events: none;
 }
@@ -73,103 +80,31 @@
   50% { opacity: 0; }
 }
 
-/* ─── Content Area ─── */
-.ventilation-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 8px 12px 16px;
-  z-index: 5;
-  overflow-y: auto;
-  gap: 10px;
-}
-
-/* ─── Smoke Search Area ─── */
-.vent-search-area {
-  position: relative;
-  flex: 1;
-  min-height: 280px;
-  background: rgba(0, 5, 0, 0.6);
-  border: 1px solid rgba(0, 255, 0, 0.15);
-  border-radius: 6px;
-  overflow: hidden;
-  box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.8), 0 0 15px rgba(0, 50, 0, 0.2);
-}
-
-/* Grid pattern */
-.vent-search-area::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background:
-    repeating-linear-gradient(90deg, rgba(0, 255, 0, 0.02) 0px, transparent 1px, transparent 50px),
-    repeating-linear-gradient(0deg, rgba(0, 255, 0, 0.02) 0px, transparent 1px, transparent 50px);
-  pointer-events: none;
-  z-index: 1;
-}
-
-.smoke-canvas {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 2;
-}
-
-/* ─── Search Area Label ─── */
-.search-area-label {
-  position: absolute;
-  bottom: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 4;
-  font-size: 0.55rem;
-  color: rgba(0, 255, 0, 0.4);
-  letter-spacing: 2px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-}
-
-.search-pulse {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #00ff50;
-  animation: search-blink 1.5s ease-in-out infinite;
-}
-
-@keyframes search-blink {
-  0%, 100% { opacity: 0.3; box-shadow: none; }
-  50% { opacity: 1; box-shadow: 0 0 6px #00ff50; }
-}
-
-/* ─── Keys ─── */
+/* ─── Keys (positioned over full screen) ─── */
 .vent-key {
-  position: absolute;
-  z-index: 3;
+  position: fixed;
+  z-index: 5;
   transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
   opacity: 0;
-  transition: opacity 0.8s ease, transform 0.3s;
+  transition: opacity 0.8s ease, transform 0.4s;
   pointer-events: none;
 }
 
 .vent-key.revealed {
   opacity: 1;
   pointer-events: auto;
-  animation: key-appear 0.6s ease-out;
+  animation: key-appear 0.8s ease-out;
 }
 
 .vent-key.collected {
-  opacity: 0.3;
+  opacity: 0;
   pointer-events: none;
-  transform: translate(-50%, -50%) scale(0.6);
+  transform: translate(-50%, -50%) scale(0) rotate(180deg);
+  transition: all 0.6s ease-in;
 }
 
 .vent-key.mine.revealed:not(.collected) {
@@ -180,44 +115,131 @@
   animation: key-glow 1.5s ease-in-out infinite;
 }
 
+.vent-key:not(.mine).revealed {
+  opacity: 0.35;
+}
+
 @keyframes key-appear {
-  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3) rotate(-45deg); }
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3) rotate(-90deg); }
+  60% { opacity: 1; transform: translate(-50%, -50%) scale(1.15) rotate(5deg); }
   100% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0); }
 }
 
 @keyframes key-glow {
-  0%, 100% { filter: drop-shadow(0 0 4px rgba(255, 200, 50, 0.6)); }
-  50% { filter: drop-shadow(0 0 14px rgba(255, 200, 50, 1)); }
+  0%, 100% { filter: drop-shadow(0 0 6px rgba(255, 200, 50, 0.6)); }
+  50% { filter: drop-shadow(0 0 20px rgba(255, 200, 50, 1)) drop-shadow(0 0 40px rgba(255, 150, 0, 0.5)); }
 }
 
 .key-icon {
-  font-size: 1.8rem;
+  font-size: 2.5rem;
   line-height: 1;
 }
 
 .key-label {
-  font-size: 0.5rem;
+  font-size: 0.55rem;
   color: #ffcc44;
   letter-spacing: 1px;
-  background: rgba(0, 0, 0, 0.7);
-  padding: 2px 6px;
-  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.75);
+  padding: 3px 8px;
+  border-radius: 3px;
   white-space: nowrap;
   text-shadow: 0 0 4px rgba(255, 200, 50, 0.5);
+  border: 1px solid rgba(255, 200, 50, 0.2);
 }
 
 .vent-key:not(.mine) .key-label {
-  color: #888;
+  color: #666;
+  border-color: rgba(100, 100, 100, 0.2);
 }
 
-/* ─── Lock Panel ─── */
+/* ─── Phase Hint (bottom center) ─── */
+.vent-phase-hint {
+  position: fixed;
+  bottom: 20px;
+  left: 12px; right: 12px;
+  z-index: 10;
+  text-align: center;
+}
+
+.phase-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.6rem;
+  letter-spacing: 2px;
+  color: rgba(255, 100, 100, 0.6);
+  background: rgba(0, 0, 0, 0.7);
+  padding: 10px 18px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 51, 51, 0.2);
+  backdrop-filter: blur(6px);
+  animation: hint-fade-in 0.5s ease;
+}
+
+.phase-text.phase-unlock {
+  color: #ffcc44;
+  border-color: rgba(255, 200, 50, 0.3);
+  animation: hint-fade-in 0.5s ease, hint-pulse 1.5s ease-in-out infinite;
+}
+
+.phase-text.phase-wait {
+  color: #6aaa6a;
+  border-color: rgba(0, 255, 0, 0.15);
+}
+
+.phase-text.phase-ready {
+  color: #00ff50;
+  border-color: rgba(0, 255, 80, 0.3);
+  text-shadow: 0 0 6px rgba(0, 255, 80, 0.5);
+  animation: hint-fade-in 0.5s ease, hint-pulse 1s ease-in-out infinite;
+}
+
+@keyframes hint-fade-in {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.search-pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ff3333;
+  animation: search-blink 1.5s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes search-blink {
+  0%, 100% { opacity: 0.3; box-shadow: none; }
+  50% { opacity: 1; box-shadow: 0 0 6px #ff3333; }
+}
+
+/* ─── Lock Panel Overlay (slides up from bottom) ─── */
+.vent-lock-overlay {
+  position: fixed;
+  bottom: 0;
+  left: 0; right: 0;
+  z-index: 20;
+  padding: 0 12px 70px;
+  animation: slide-up 0.5s ease-out;
+}
+
+.vent-lock-overlay.minimized {
+  bottom: 60px;
+  animation: none;
+}
+
+@keyframes slide-up {
+  0% { transform: translateY(100%); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
 .vent-lock-panel {
-  background: rgba(20, 0, 0, 0.85);
+  background: rgba(20, 0, 0, 0.9);
   border: 1px solid rgba(255, 51, 51, 0.3);
-  border-radius: 6px;
-  padding: 12px;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 0 15px rgba(255, 0, 0, 0.08);
+  border-radius: 8px;
+  padding: 14px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.6), 0 0 15px rgba(255, 0, 0, 0.1);
 }
 
 .lock-panel-title {
@@ -245,7 +267,7 @@
   border: 1px solid #333;
   border-radius: 6px;
   padding: 10px 12px;
-  min-width: 60px;
+  min-width: 58px;
   transition: all 0.3s;
 }
 
@@ -325,12 +347,21 @@
   color: #666;
 }
 
-/* ─── Footer ─── */
-.vent-footer {
+/* ─── Execute Bar (fixed bottom) ─── */
+.vent-execute-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0; right: 0;
+  z-index: 25;
+  padding: 12px;
+  background: rgba(10, 0, 0, 0.9);
+  border-top: 1px solid rgba(255, 51, 51, 0.3);
+  backdrop-filter: blur(10px);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  animation: slide-up 0.4s ease-out;
 }
 
 .submit-vent-btn {
@@ -346,7 +377,6 @@
   transition: all 0.3s;
   letter-spacing: 3px;
   border-radius: 4px;
-  backdrop-filter: blur(6px);
   text-shadow: 0 0 6px rgba(255, 0, 0, 0.4);
 }
 
@@ -365,20 +395,34 @@
 }
 
 .vent-message {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: #ff6666;
   text-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
   text-align: center;
   letter-spacing: 1px;
-  min-height: 18px;
 }
 
-/* ─── Success Panel ─── */
+/* ─── Vote Overlay (after puzzle solved) ─── */
+.vent-vote-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  z-index: 30;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+
 .vent-success-panel {
-  background: rgba(20, 0, 0, 0.9) !important;
+  background: rgba(20, 0, 0, 0.92) !important;
   border: 1px solid #ff3333 !important;
   padding: 24px !important;
   width: 100%;
+  max-width: 400px;
   box-sizing: border-box;
   box-shadow: 0 0 30px rgba(255, 0, 0, 0.2);
   border-radius: 6px;
