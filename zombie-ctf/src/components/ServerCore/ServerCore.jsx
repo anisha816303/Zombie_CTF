@@ -9,6 +9,7 @@ const ServerCore = ({ onBack, user, setUser }) => {
   const [nodes, setNodes] = useState([]);
   const [humansCount, setHumansCount] = useState(1);
   const [flashlightPos, setFlashlightPos] = useState({ x: -100, y: -100 });
+  const [isDragging, setIsDragging] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const socketRef = useRef(null);
@@ -52,12 +53,34 @@ const ServerCore = ({ onBack, user, setUser }) => {
     return () => socket.disconnect();
   }, [user.roomCode]);
 
-  const handleMouseMove = (e) => {
-    if (!coreRef.current) return;
+  // --- Drag-based torch movement ---
+  const getPointerPos = (e) => {
+    if (!coreRef.current) return null;
     const rect = coreRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    setFlashlightPos({ x, y });
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: Math.max(0, Math.min(clientX - rect.left, rect.width)),
+      y: Math.max(0, Math.min(clientY - rect.top, rect.height))
+    };
+  };
+
+  const handleDragStart = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+    const pos = getPointerPos(e);
+    if (pos) setFlashlightPos(pos);
+  };
+
+  const handleDragMove = (e) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const pos = getPointerPos(e);
+    if (pos) setFlashlightPos(pos);
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
   };
 
   const handleNodeClick = (nodeId) => {
@@ -146,16 +169,32 @@ const ServerCore = ({ onBack, user, setUser }) => {
       <div 
         className="core-interactive-area" 
         ref={coreRef} 
-        onMouseMove={handleMouseMove}
-        onMouseLeave={() => setFlashlightPos({ x: -100, y: -100 })}
+        onMouseMove={handleDragMove}
+        onMouseUp={handleDragEnd}
+        onMouseLeave={handleDragEnd}
+        onTouchMove={handleDragMove}
+        onTouchEnd={handleDragEnd}
       >
         {/* Flashlight mask overlay */}
         <div 
           className="flashlight-overlay"
           style={{
-            background: `radial-gradient(circle 80px at ${flashlightPos.x}px ${flashlightPos.y}px, transparent 0%, rgba(0, 0, 0, 0.95) 100%)`
+            background: flashlightPos.x < 0
+              ? 'rgba(0, 0, 0, 0.95)'
+              : `radial-gradient(circle 90px at ${flashlightPos.x}px ${flashlightPos.y}px, transparent 0%, rgba(0, 0, 0, 0.95) 100%)`
           }}
         />
+
+        {/* Draggable torch */}
+        <div
+          className={`torch-handle ${isDragging ? 'dragging' : ''} ${flashlightPos.x < 0 ? 'docked' : ''}`}
+          style={flashlightPos.x >= 0 ? { left: flashlightPos.x, top: flashlightPos.y } : {}}
+          onMouseDown={handleDragStart}
+          onTouchStart={handleDragStart}
+        >
+          <div className="torch-icon">🔦</div>
+          {flashlightPos.x < 0 && <div className="torch-hint">DRAG TO SEARCH</div>}
+        </div>
 
         {nodes.map(node => {
           const isClaimed = !!node.claimedBy;

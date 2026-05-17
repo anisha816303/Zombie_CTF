@@ -47,6 +47,7 @@
   cursor: crosshair;
   overflow: hidden;
   box-shadow: inset 0 0 50px #000;
+  touch-action: none;
 }
 
 .flashlight-overlay {
@@ -163,6 +164,64 @@
   color: #ff3333;
   text-shadow: 0 0 5px #ff0000;
   height: 20px;
+}
+
+/* ── Draggable Torch ── */
+.torch-handle {
+  position: absolute;
+  z-index: 8;
+  transform: translate(-50%, -50%);
+  cursor: grab;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: transform 0.05s linear;
+}
+
+.torch-handle.docked {
+  left: 50% !important;
+  bottom: 20px !important;
+  top: auto !important;
+  transform: translate(-50%, 0);
+  animation: torch-bob 2s ease-in-out infinite;
+}
+
+.torch-icon {
+  font-size: 2.2rem;
+  filter: drop-shadow(0 0 12px rgba(255, 200, 50, 0.8)) drop-shadow(0 0 25px rgba(255, 150, 0, 0.4));
+  transition: transform 0.15s;
+  line-height: 1;
+}
+
+.torch-handle.dragging {
+  cursor: grabbing;
+}
+
+.torch-handle.dragging .torch-icon {
+  transform: scale(1.2);
+  filter: drop-shadow(0 0 18px rgba(255, 200, 50, 1)) drop-shadow(0 0 35px rgba(255, 150, 0, 0.6));
+}
+
+.torch-hint {
+  font-size: 0.65rem;
+  color: #ffcc44;
+  letter-spacing: 2px;
+  text-shadow: 0 0 6px rgba(255, 200, 50, 0.6);
+  font-family: 'Courier New', monospace;
+  animation: hint-pulse 1.5s ease-in-out infinite;
+  white-space: nowrap;
+}
+
+@keyframes torch-bob {
+  0%, 100% { transform: translate(-50%, 0); }
+  50% { transform: translate(-50%, -8px); }
+}
+
+@keyframes hint-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 
 @keyframes pulse-red {

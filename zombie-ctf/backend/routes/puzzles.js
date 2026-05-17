@@ -9,6 +9,7 @@ const PUZZLES = {
   sector_b: { answer: 'containment' },
   med_bay: { answer: 'antidote' },
   archive: { answer: 'archives' },
+  control_room: { answer: 'director' },
   server_core: { answer: 'stabilize' },
   ventilation_shafts: { answer: 'override' }
 };

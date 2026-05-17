@@ -52,7 +52,7 @@
     border: 1px solid #333;
     border-radius: 4px;
     margin: 0 auto 20px;
-    width: 90%; max-width: 500px;
+    width: 95%; max-width: 700px;
     padding: 16px; box-sizing: border-box;
     display: flex; gap: 12px; justify-content: space-between;
 }
@@ -77,9 +77,9 @@
 
 .fader-input {
     -webkit-appearance: none;
-    width: 120px; height: 6px;
+    width: 90px; height: 6px;
     background: #222; outline: none; border-radius: 3px;
-    transform: rotate(-90deg); margin: 60px 0;
+    transform: rotate(-90deg); margin: 50px 0;
 }
 
 .fader-input::-webkit-slider-thumb {

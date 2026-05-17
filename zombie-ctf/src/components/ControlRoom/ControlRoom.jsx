@@ -202,6 +202,8 @@ It came from the DIRECTOR's terminal."`;
                     setRoomSolved(true);
                     setUser(data.user);
                     setTimeout(() => onBack(), 3000);
+                } else {
+                    setFinalMsg(data.message || 'VERIFICATION FAILED.');
                 }
             } catch { setFinalMsg('SERVER ERROR'); }
         } else {
