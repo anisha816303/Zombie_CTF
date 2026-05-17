@@ -22,11 +22,10 @@ const useTypewriter = (text, speed = 28, active = true) => {
 };
 
 // ─── Full-screen Smoke Particle System ──────────────────────────
-const SmokeCanvas = ({ keys, onKeyReveal }) => {
+const SmokeCanvas = () => {
   const canvasRef = useRef(null);
   const particlesRef = useRef([]);
   const animRef = useRef(null);
-  const revealedRef = useRef(new Set());
   const pointerRef = useRef({ x: -1000, y: -1000 });
 
   useEffect(() => {
@@ -58,14 +57,14 @@ const SmokeCanvas = ({ keys, onKeyReveal }) => {
     const initParticles = () => {
       const particles = [];
       const w = canvas.width, h = canvas.height;
-      for (let i = 0; i < 200; i++) { // thicker smoke
+      for (let i = 0; i < 300; i++) { // highly dense smoke
         particles.push({
           x: Math.random() * w,
           y: Math.random() * h,
-          size: 40 + Math.random() * 100,
+          size: 60 + Math.random() * 120,
           speedX: (Math.random() - 0.5) * 0.4,
           speedY: -0.1 - Math.random() * 0.3,
-          opacity: 0.15 + Math.random() * 0.4, // much more opaque
+          opacity: 0.4 + Math.random() * 0.6, // very opaque
           life: Math.random() * 300,
           maxLife: 300 + Math.random() * 300,
         });
@@ -91,9 +90,9 @@ const SmokeCanvas = ({ keys, onKeyReveal }) => {
 
         if (p.life > p.maxLife) {
           p.x = Math.random() * w;
-          p.y = h + Math.random() * 60;
+          p.y = Math.random() * h; // Fix bug: respawn randomly across entire screen
           p.life = 0;
-          p.opacity = 0.15 + Math.random() * 0.4;
+          p.opacity = 0.4 + Math.random() * 0.6;
         }
 
         const lifeRatio = p.life / p.maxLife;
@@ -123,18 +122,6 @@ const SmokeCanvas = ({ keys, onKeyReveal }) => {
         ctx.globalCompositeOperation = 'source-over'; // restore default
       }
 
-      // Check if pointer reveals any keys
-      keys.forEach((key, idx) => {
-        if (revealedRef.current.has(idx)) return;
-        const kx = (key.x / 100) * w;
-        const ky = (key.y / 100) * h;
-        const ptrDist = Math.sqrt((pointerRef.current.x - kx) ** 2 + (pointerRef.current.y - ky) ** 2);
-        if (ptrDist < 120) { // reveal when user swipes near it
-          revealedRef.current.add(idx);
-          onKeyReveal(idx);
-        }
-      });
-
       animRef.current = requestAnimationFrame(render);
     };
 
@@ -146,7 +133,7 @@ const SmokeCanvas = ({ keys, onKeyReveal }) => {
       window.removeEventListener('touchmove', handlePointer);
       window.removeEventListener('touchend', clearPointer);
     };
-  }, [keys]);
+  }, []);
 
   return <canvas ref={canvasRef} className="smoke-canvas-fullscreen" />;
 };
@@ -157,7 +144,6 @@ const VentilationShafts = ({ onBack, user, setUser }) => {
   const [myLockIndex, setMyLockIndex] = useState(null);
   const [zombieNames, setZombieNames] = useState({});
   const [keys, setKeys] = useState([]);
-  const [revealedKeys, setRevealedKeys] = useState(new Set());
   const [collectedKeys, setCollectedKeys] = useState(new Set());
   const [unlockedLocks, setUnlockedLocks] = useState(new Set());
   const [found, setFound] = useState(false);
@@ -266,10 +252,6 @@ const VentilationShafts = ({ onBack, user, setUser }) => {
     } catch (e) { console.error('Failed to fetch vote status', e); }
   };
 
-  const handleKeyReveal = useCallback((keyIdx) => {
-    setRevealedKeys(prev => new Set([...prev, keyIdx]));
-  }, []);
-
   const handleKeyTap = (keyIdx) => {
     if (collectedKeys.has(keyIdx)) return;
     
@@ -369,18 +351,17 @@ const VentilationShafts = ({ onBack, user, setUser }) => {
       <div className="glitch-overlay-vent" />
 
       {/* Full-screen smoke — always visible as part of the background */}
-      <SmokeCanvas keys={keys} onKeyReveal={handleKeyReveal} />
+      <SmokeCanvas />
 
-      {/* Keys floating over the background (full-screen positioned) */}
+      {/* Keys floating under the smoke (z-index 1) */}
       {!found && keys.map((key, idx) => {
-        const isRevealed = revealedKeys.has(idx);
         const isCollected = collectedKeys.has(idx);
         return (
           <div
             key={key.id}
-            className={`vent-key ${isRevealed ? 'revealed' : ''} ${isCollected ? 'collected' : ''}`}
+            className={`vent-key ${isCollected ? 'collected' : ''}`}
             style={{ left: `${key.x}%`, top: `${key.y}%` }}
-            onClick={() => isRevealed && !isCollected && handleKeyTap(idx)}
+            onClick={() => !isCollected && handleKeyTap(idx)}
           >
             <div className="key-icon">🔑</div>
           </div>

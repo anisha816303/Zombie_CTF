@@ -83,21 +83,14 @@
 /* ─── Keys (positioned over full screen) ─── */
 .vent-key {
   position: fixed;
-  z-index: 5;
+  z-index: 1; /* Below the smoke (z-index: 2) */
   transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  opacity: 0;
-  transition: opacity 0.8s ease, transform 0.4s;
-  pointer-events: none;
-}
-
-.vent-key.revealed {
-  opacity: 1;
-  pointer-events: auto;
-  animation: key-appear 0.8s ease-out;
+  transition: transform 0.4s;
+  cursor: pointer;
 }
 
 .vent-key.collected {
@@ -115,15 +108,7 @@
   animation: key-glow 1.5s ease-in-out infinite;
 }
 
-.vent-key:not(.mine).revealed {
-  opacity: 0.35;
-}
 
-@keyframes key-appear {
-  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3) rotate(-90deg); }
-  60% { opacity: 1; transform: translate(-50%, -50%) scale(1.15) rotate(5deg); }
-  100% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0); }
-}
 
 @keyframes key-glow {
   0%, 100% { filter: drop-shadow(0 0 6px rgba(255, 200, 50, 0.6)); }
