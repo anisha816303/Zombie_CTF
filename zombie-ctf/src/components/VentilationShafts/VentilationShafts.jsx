@@ -8,17 +8,48 @@ const TARGET_ANGLES = [90, 180, 270, 0, 90]; // Solution angles
 
 const VentilationShafts = ({ onBack, user, setUser }) => {
   const [valves, setValves] = useState([0, 0, 0, 0, 0]);
+  const [myValveIndex, setMyValveIndex] = useState(null); // Which valve this zombie controls
+  const [zombieNames, setZombieNames] = useState({}); // valve index -> zombie name
   const [found, setFound] = useState(false);
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [humans, setHumans] = useState([]);
-  
+
   // Voting state
   const [myVote, setMyVote] = useState(null);
   const [voteStatus, setVoteStatus] = useState(null);
   const [voteSubmitting, setVoteSubmitting] = useState(false);
-  
+
   const socketRef = useRef(null);
+
+  // Assign each zombie a valve based on their index among zombies in the room
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/auth/room-users/${user.roomCode}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          // Filter to zombies only
+          const zombies = data.users.filter(u => u.persona === 'zombie' && !u.isAdmin);
+          const myZombieIndex = zombies.findIndex(z => z.uniqueId === user.uniqueId);
+          if (myZombieIndex !== -1) {
+            const assignedValve = myZombieIndex % NUM_VALVES;
+            setMyValveIndex(assignedValve);
+
+            // Build name map for all valves
+            const nameMap = {};
+            zombies.forEach((z, idx) => {
+              const valveIdx = idx % NUM_VALVES;
+              nameMap[valveIdx] = z.name;
+            });
+            setZombieNames(nameMap);
+          } else {
+            // Fallback — might be a human somehow viewing this
+            setMyValveIndex(0);
+          }
+        }
+      })
+      .catch(() => setMyValveIndex(0));
+  }, [user.roomCode, user.uniqueId]);
 
   useEffect(() => {
     const socket = io(API_BASE_URL);
@@ -63,6 +94,9 @@ const VentilationShafts = ({ onBack, user, setUser }) => {
 
   const handleValveClick = (index) => {
     if (found) return;
+    // Only allow clicking YOUR assigned valve
+    if (index !== myValveIndex) return;
+
     setValves(prev => {
       const newValves = [...prev];
       newValves[index] = (newValves[index] + 90) % 360;
@@ -78,9 +112,11 @@ const VentilationShafts = ({ onBack, user, setUser }) => {
     return true;
   };
 
+  const isValveAligned = (i) => valves[i] === TARGET_ANGLES[i];
+
   const handleSubmit = async () => {
     if (!checkSolution()) {
-      setMessage("AIRFLOW BLOCKED. ALIGNMENT INCORRECT.");
+      setMessage("AIRFLOW BLOCKED. NOT ALL VALVES ALIGNED.");
       setTimeout(() => setMessage(""), 3000);
       return;
     }
@@ -99,7 +135,7 @@ const VentilationShafts = ({ onBack, user, setUser }) => {
       if (data.success) {
         setFound(true);
         setUser(data.user);
-        
+
         const hRes = await fetch(`${API_BASE_URL}/api/puzzles/humans/${user.roomCode}`);
         const hData = await hRes.json();
         if (hData.success) {
@@ -107,7 +143,7 @@ const VentilationShafts = ({ onBack, user, setUser }) => {
         }
         fetchVoteStatus();
       } else {
-        setMessage("SYSTEM REJECTED OVERRIDE.");
+        setMessage(data.message || "SYSTEM REJECTED OVERRIDE.");
         setTimeout(() => setMessage(""), 3000);
       }
     } catch (err) {
@@ -150,6 +186,7 @@ const VentilationShafts = ({ onBack, user, setUser }) => {
     setVoteSubmitting(false);
   };
 
+  const alignedCount = valves.filter((a, i) => a === TARGET_ANGLES[i]).length;
   const isFinalized = voteStatus?.finalized;
 
   return (
@@ -164,33 +201,71 @@ const VentilationShafts = ({ onBack, user, setUser }) => {
         {!found ? (
           <>
             <div className="vent-header">
-              <h2>💨 VENTILATION SHAFTS 💨</h2>
+              <h2>☣ VENTILATION SHAFTS ☣</h2>
               <p>Override the environmental controls to distribute the Chrysalis virus to the remaining safe zones.</p>
-              <p>Align the valves to open the main airflow ducts.</p>
+              <p>Each operative controls ONE valve. Coordinate with your horde to align all ducts simultaneously.</p>
+              {myValveIndex !== null && (
+                <div className="vent-role-badge">
+                  YOUR VALVE: <span className="role-valve-num">V{myValveIndex + 1}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="vent-collab-hint">
+              <strong>TAP your valve</strong> to rotate it 90°. Match the <strong>dashed target ring</strong> marker.
+              <br />Other operatives' valves update in real-time — you can only control yours.
+            </div>
+
+            {/* Sync Status Dots */}
+            <div className="vent-sync-bar">
+              <div className="vent-sync-label">DUCT ALIGNMENT STATUS</div>
+              <div className="vent-sync-dots">
+                {valves.map((_, i) => (
+                  <div
+                    key={i}
+                    className={`sync-dot ${isValveAligned(i) ? 'aligned' : ''} ${i === myValveIndex ? 'mine' : ''}`}
+                    title={`V${i + 1}${zombieNames[i] ? ` — ${zombieNames[i]}` : ''}`}
+                  />
+                ))}
+              </div>
             </div>
 
             <div className="valves-panel">
-              {valves.map((angle, i) => (
-                <div className="valve-wrapper" key={i}>
-                  <div className="valve-target-indicator" style={{ transform: `rotate(${TARGET_ANGLES[i]}deg)` }} />
-                  <div 
-                    className="valve" 
-                    style={{ transform: `rotate(${angle}deg)` }}
-                    onClick={() => handleValveClick(i)}
-                  >
-                    <div className="valve-handle"></div>
+              {valves.map((angle, i) => {
+                const isMine = i === myValveIndex;
+                const isLocked = !isMine;
+                const aligned = isValveAligned(i);
+                return (
+                  <div className={`valve-wrapper ${isMine ? 'is-mine' : ''} ${isLocked ? 'is-locked' : ''} ${aligned ? 'is-aligned' : ''}`} key={i}>
+                    <div
+                      className="valve-target-indicator"
+                      style={{ transform: `translateX(-50%) rotate(${TARGET_ANGLES[i]}deg)` }}
+                    />
+                    <div
+                      className="valve"
+                      style={{ transform: `rotate(${angle}deg)` }}
+                      onClick={() => handleValveClick(i)}
+                    >
+                      <div className="valve-img-wrap" />
+                    </div>
+                    <div className="valve-label">
+                      V{i + 1} {aligned && '✓'}
+                    </div>
+                    {zombieNames[i] && (
+                      <div className="valve-owner-tag">{isMine ? 'YOU' : zombieNames[i]}</div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <div className="vent-footer">
-              <button 
-                className="submit-vent-btn" 
+              <button
+                className="submit-vent-btn"
                 onClick={handleSubmit}
-                disabled={submitting || !checkSolution()}
+                disabled={submitting || alignedCount < NUM_VALVES}
               >
-                EXECUTE OVERRIDE
+                EXECUTE OVERRIDE ({alignedCount}/{NUM_VALVES})
               </button>
               {message && <div className="vent-message">{message}</div>}
             </div>
@@ -214,7 +289,7 @@ const VentilationShafts = ({ onBack, user, setUser }) => {
                   <div className="vote-collab-icon">🧟‍♂️</div>
                   <h2>HORDE COUNCIL II</h2>
                   <p>
-                    The air carries our gift. 
+                    The air carries our gift.
                     <br />Vote together to select the next operative to assimilate.
                   </p>
                 </div>
